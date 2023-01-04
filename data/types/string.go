@@ -7,17 +7,35 @@ import (
 
 type StringType struct {
 	data.BaseType
+	value string
 }
 
-func (t *StringType) parseType(p []byte) error {
-	fmt.Println("StringType.parseType() called")
-	return nil
+var _ data.Type = &StringType{}
+
+func (t *StringType) Parse(p any) error {
+	switch p.(type) {
+	case string:
+		t.value = p.(string)
+		return nil
+	default:
+		return fmt.Errorf("%v: expected string, got %T", data.ErrInvalidValue, p)
+	}
 }
-func (t *StringType) To(tt data.Type) data.Type {
-	fmt.Println("StringType.To() called")
-	return nil
+
+func (t *StringType) GetTypeKind() data.Kind {
+	return data.GetKindFromName(data.KindString.String())
 }
-func (t *StringType) GetValue() []byte {
-	fmt.Println("StringType.GetValue() called")
-	return nil
+func (t *StringType) GetTypeName() string {
+	return "string"
+}
+func (t *StringType) GetTypeSize() int {
+	return len(t.value)
+}
+func (t *StringType) GetValue() any {
+	return t.value
+}
+
+func NewStringType(value any) (data.Type, error) {
+	stringType := &StringType{}
+	return stringType, stringType.Parse(value)
 }

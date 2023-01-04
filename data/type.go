@@ -1,42 +1,49 @@
 package data
 
 import (
-	"errors"
 	"reflect"
+	"unsafe"
 )
 
 type Type interface {
-	Parse(p []byte) error
-	parseType(p []byte) error
+	Parse(v any) error
 	GetTypeName() string
-	GetTypeKind() string
+	GetTypeKind() Kind
 	GetTypeSize() int
-	GetValue() []byte
-	To(t Type) Type
+	GetValue() any
+	To(t Type) (Type, error)
 }
 
-type BaseType struct {
-	size int
-	kind reflect.Kind
+type BaseType struct{}
+
+var _ Type = &BaseType{}
+
+func (_ *BaseType) Parse(_ any) error {
+	return ErrParseFuncNotImplemented
 }
 
-func (t *BaseType) GetTypeName() string {
-	return reflect.TypeOf(t).Name()
+func (_ *BaseType) GetTypeKind() Kind {
+	return GetKindFromName(KindUnknown.String())
 }
-func (t *BaseType) GetTypeKind() string {
-	return t.kind.String()
+func (b *BaseType) GetTypeName() string {
+	return reflect.TypeOf(b).String()
 }
-func (t *BaseType) GetTypeSize() int {
-	return t.size
+func (b *BaseType) GetTypeSize() int {
+	return int(unsafe.Sizeof(b))
 }
-func (t *BaseType) Parse(p []byte) error {
-	if reflect.TypeOf(t).Name() != "BaseType" {
-		return errors.New("BaseType.Parse() can only be called on BaseType")
+func (b *BaseType) GetValue() any {
+	return nil
+}
+func (b *BaseType) To(t Type) (Type, error) {
+	if b.GetTypeKind() != t.GetTypeKind() {
+		return nil, ErrDataTypeKindNotMatch
 	}
-
-	return reflect.
-		ValueOf(t).
-		MethodByName("parseType").
-		Call([]reflect.Value{reflect.ValueOf(p)})[0].Interface().(error)
-
+	if b.GetTypeName() == t.GetTypeName() {
+		return t, nil
+	}
+	err := t.Parse(b.GetValue())
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
 }
