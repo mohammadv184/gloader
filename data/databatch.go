@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Batch is a collection of data sets.
 type Batch []*Set
 
 func (b *Batch) Add(set *Set) {
