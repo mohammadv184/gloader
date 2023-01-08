@@ -7,7 +7,7 @@ type Manager struct {
 var driverManager *Manager
 
 func init() {
-	driverManager = &Manager{drivers: make(map[string]Driver)}
+	driverManager = newDriverManager()
 }
 
 func Register(driver Driver) error {
@@ -32,4 +32,7 @@ func (dm *Manager) GetDriver(driverName string) (Driver, error) {
 
 func (dm *Manager) Drivers() map[string]Driver {
 	return dm.drivers
+}
+func newDriverManager() *Manager {
+	return &Manager{drivers: make(map[string]Driver)}
 }
