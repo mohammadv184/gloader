@@ -22,7 +22,7 @@ func (t *ArrayType) Parse(v any) error {
 }
 
 func (t *ArrayType) GetTypeKind() data.Kind {
-	return data.GetKindFromName(data.KindArray.String())
+	return data.KindArray
 }
 func (t *ArrayType) GetTypeName() string {
 	return "array"

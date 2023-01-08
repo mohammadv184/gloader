@@ -34,7 +34,7 @@ func (t *IntegerType) Parse(v any) error {
 	}
 }
 func (t *IntegerType) GetTypeKind() data.Kind {
-	return data.GetKindFromName(data.KindInt.String())
+	return data.KindInt
 }
 func (t *IntegerType) GetTypeName() string {
 	return "int"

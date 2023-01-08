@@ -20,7 +20,7 @@ func (t *BoolType) Parse(p any) error {
 	}
 }
 func (t *BoolType) GetTypeKind() data.Kind {
-	return data.GetKindFromName(data.KindBool.String())
+	return data.KindBool
 }
 func (t *BoolType) GetTypeName() string {
 	return "bool"

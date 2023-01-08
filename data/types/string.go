@@ -23,7 +23,7 @@ func (t *StringType) Parse(p any) error {
 }
 
 func (t *StringType) GetTypeKind() data.Kind {
-	return data.GetKindFromName(data.KindString.String())
+	return data.KindString
 }
 func (t *StringType) GetTypeName() string {
 	return "string"
