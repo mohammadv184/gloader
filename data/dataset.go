@@ -1,5 +1,12 @@
 package data
 
+import (
+	"fmt"
+	"strings"
+)
+
+// Set is a collection of related data. It`s used to collect and organize data.
+// also in relational database, it`s called a row.
 type Set []*Data
 
 func (d *Set) Add(data *Data) {
@@ -42,6 +49,29 @@ func (d *Set) Set(key string, value Type) {
 func (d *Set) SetByIndex(index int, value Type) {
 	(*d)[index].SetValue(value)
 }
+func (d *Set) Swap(i, j int) {
+	(*d)[i], (*d)[j] = (*d)[j], (*d)[i]
+}
+
+func (d *Set) String(delimiter string) string {
+	var s strings.Builder
+	for i, data := range *d {
+		if i > 0 {
+			s.WriteString(delimiter)
+		}
+		s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue()))
+	}
+	return s.String()
+}
+
+func (d *Set) GetKeys() []string {
+	keys := make([]string, len(*d))
+	for i, data := range *d {
+		keys[i] = data.GetKey()
+	}
+	return keys
+}
+
 func NewDataSet() *Set {
 	return &Set{}
 }
