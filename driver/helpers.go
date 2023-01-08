@@ -1,11 +1,11 @@
 package driver
 
-func IsReadableDriver(driver Driver) bool {
-	_, ok := driver.(ReadableDriver)
+func IsReadableConnection(Conn Connection) bool {
+	_, ok := Conn.(ReadableConnection)
 	return ok
 }
 
-func IsWritableDriver(driver Driver) bool {
-	_, ok := driver.(WritableDriver)
+func IsWritableConnection(Conn Connection) bool {
+	_, ok := Conn.(WritableConnection)
 	return ok
 }
