@@ -37,7 +37,7 @@ func (d *Set) Remove(key string) {
 func (d *Set) RemoveByIndex(index int) {
 	*d = append((*d)[:index], (*d)[index+1:]...)
 }
-func (d *Set) Set(key string, value Type) {
+func (d *Set) Set(key string, value ValueType) {
 	for _, data := range *d {
 		if data.GetKey() == key {
 			data.SetValue(value)
@@ -46,7 +46,7 @@ func (d *Set) Set(key string, value Type) {
 	}
 	*d = append(*d, NewData(key, value))
 }
-func (d *Set) SetByIndex(index int, value Type) {
+func (d *Set) SetByIndex(index int, value ValueType) {
 	(*d)[index].SetValue(value)
 }
 func (d *Set) Swap(i, j int) {
@@ -70,6 +70,13 @@ func (d *Set) GetKeys() []string {
 		keys[i] = data.GetKey()
 	}
 	return keys
+}
+func (d *Set) Clone() *Set {
+	clone := NewDataSet()
+	for _, data := range *d {
+		clone.Add(data.Clone())
+	}
+	return clone
 }
 
 func NewDataSet() *Set {

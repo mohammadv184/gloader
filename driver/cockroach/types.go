@@ -7,7 +7,7 @@ import (
 )
 
 type ArrayType struct {
-	data.BaseType
+	data.BaseValueType
 	value []any
 }
 
@@ -35,7 +35,7 @@ func (t *ArrayType) GetValue() any {
 }
 
 type JsonBType struct {
-	data.BaseType
+	data.BaseValueType
 	value []byte
 }
 

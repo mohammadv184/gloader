@@ -1,40 +1,26 @@
 package gloader
 
 import (
+	"bytes"
 	"gloader/driver"
 )
 
 type GLoader struct {
-	source      driver.ReadableDriver
-	destination driver.WritableDriver
-	sDSN        string
-	dDSN        string
+	sourceDriver driver.Driver
+	destDriver   driver.Driver
+	sourceDSN    string
+	destDSN      string
 }
 
-func New() *GLoader {
-	return &GLoader{}
+func NewGLoader(sourceDriver, destDriver driver.Driver, sourceDSN, destDSN string) *GLoader {
+	return &GLoader{
+		sourceDriver: sourceDriver,
+		destDriver:   destDriver,
+		sourceDSN:    sourceDSN,
+		destDSN:      destDSN,
+	}
+	bytes.Buffer{}
 }
+func Start() error {
 
-func (g *GLoader) Source(source string, dsn string) error {
-	src, err := driver.GetDriver(source)
-	if err != nil {
-		return err
-	}
-	if !driver.IsReadableConnection(src) {
-		return driver.ErrDriverNotReadable
-	}
-	g.setSource(src.(driver.ReadableDriver))
-	return nil
-}
-
-func (g *GLoader) Destination(destination string) error {
-	dst, err := driver.GetDriver(destination)
-	if err != nil {
-		return err
-	}
-	if !driver.IsWritableConnection(dst) {
-		return driver.ErrDriverNotWritable
-	}
-	g.setDestination(dst.(driver.WritableDriver))
-	return nil
 }

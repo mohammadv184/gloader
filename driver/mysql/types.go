@@ -8,7 +8,7 @@ import (
 )
 
 type CharType struct {
-	data.BaseType
+	data.BaseValueType
 	value string
 }
 
@@ -30,7 +30,7 @@ func (t *CharType) GetValue() any {
 }
 
 type SmallIntType struct {
-	data.BaseType
+	data.BaseValueType
 	value int16
 }
 
@@ -78,7 +78,7 @@ func (t *SmallIntType) GetValue() any {
 }
 
 type BigIntType struct {
-	data.BaseType
+	data.BaseValueType
 	value int64
 }
 
@@ -126,7 +126,7 @@ func (t *BigIntType) GetValue() any {
 }
 
 type LongBlobType struct {
-	data.BaseType
+	data.BaseValueType
 	value []byte
 }
 
@@ -148,7 +148,7 @@ func (t *LongBlobType) GetValue() any {
 }
 
 type DateTimeType struct {
-	data.BaseType
+	data.BaseValueType
 	value time.Time
 }
 

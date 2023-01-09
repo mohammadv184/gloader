@@ -6,7 +6,7 @@ import (
 )
 
 type IntegerType struct {
-	data.BaseType
+	data.BaseValueType
 	value int64
 }
 

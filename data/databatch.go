@@ -14,11 +14,32 @@ func (b *Batch) Add(set *Set) {
 func (b *Batch) Get(index int) *Set {
 	return (*b)[index]
 }
+
+func (b *Batch) Pop() *Set {
+	if b.GetSize() == 0 {
+		return nil
+	}
+	set := b.Get(0)
+	*b = (*b)[1:]
+	return set
+}
+
 func (b *Batch) GetSize() int {
 	return len(*b)
 }
 func (b *Batch) Remove(index int) {
 	*b = append((*b)[:index], (*b)[index+1:]...)
+}
+func (b *Batch) Clear() {
+	*b = nil
+}
+
+func (b *Batch) Clone() *Batch {
+	clone := NewDataBatch()
+	for _, set := range *b {
+		clone.Add(set.Clone())
+	}
+	return clone
 }
 
 // ToCSV converts the data batch to a RFC4180-compliant CSV string.

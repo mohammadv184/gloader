@@ -6,7 +6,7 @@ import (
 )
 
 type StringType struct {
-	data.BaseType
+	data.BaseValueType
 	value string
 }
 

@@ -8,36 +8,40 @@ import (
 )
 
 type Type interface {
-	Parse(v any) error
 	GetTypeName() string
 	GetTypeKind() Kind
 	GetTypeSize() int
+}
+
+type ValueType interface {
+	Type
+	Parse(v any) error
 	GetValue() any
-	To(t Type) (Type, error)
+	To(t ValueType) (ValueType, error)
 	AssignTo(t any) error
 }
 
-type BaseType struct{}
+type BaseValueType struct{}
 
-var _ Type = &BaseType{}
+var _ Type = &BaseValueType{}
 
-func (_ *BaseType) Parse(_ any) error {
+func (_ *BaseValueType) Parse(_ any) error {
 	return ErrParseFuncNotImplemented
 }
 
-func (_ *BaseType) GetTypeKind() Kind {
+func (_ *BaseValueType) GetTypeKind() Kind {
 	return KindUnknown
 }
-func (b *BaseType) GetTypeName() string {
+func (b *BaseValueType) GetTypeName() string {
 	return reflect.TypeOf(b).String()
 }
-func (b *BaseType) GetTypeSize() int {
+func (b *BaseValueType) GetTypeSize() int {
 	return int(unsafe.Sizeof(b))
 }
-func (b *BaseType) GetValue() any {
+func (b *BaseValueType) GetValue() any {
 	return nil
 }
-func (b *BaseType) To(t Type) (Type, error) {
+func (b *BaseValueType) To(t ValueType) (ValueType, error) {
 	if b.GetTypeKind() != t.GetTypeKind() {
 		return nil, ErrDataTypeKindNotMatch
 	}
@@ -50,7 +54,7 @@ func (b *BaseType) To(t Type) (Type, error) {
 	}
 	return t, nil
 }
-func (b *BaseType) AssignTo(dest any) error {
+func (b *BaseValueType) AssignTo(dest any) error {
 	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
 		return ErrDestMustBePointer
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 type BoolType struct {
-	data.BaseType
+	data.BaseValueType
 	value bool
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 type ArrayType struct {
-	data.BaseType
+	data.BaseValueType
 	value []any
 }
 
