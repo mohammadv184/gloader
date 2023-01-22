@@ -25,7 +25,7 @@ func (t *BoolType) GetTypeKind() data.Kind {
 func (t *BoolType) GetTypeName() string {
 	return "bool"
 }
-func (t *BoolType) GetTypeSize() int {
+func (t *BoolType) GetTypeSize() uint64 {
 	return 1
 }
 func (t *BoolType) GetValue() any {

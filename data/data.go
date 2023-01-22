@@ -1,7 +1,5 @@
 package data
 
-import "reflect"
-
 // Data is a key-value pair. The key is a string and the value is a Type.
 // The value can be any type that implements the Type interface.
 // Data is the smallest unit of data in gloader.
@@ -31,7 +29,11 @@ func (d *Data) SetValue(value ValueType) {
 }
 
 func (d *Data) Clone() *Data {
-	return NewData(d.Key, reflect.ValueOf(d.Value).Elem().Interface().(ValueType))
+	return NewData(d.Key, d.Value.Clone())
+}
+
+func (d *Data) GetSize() uint64 {
+	return d.Value.GetTypeSize()
 }
 
 // NewData creates a new data with the given key and value.

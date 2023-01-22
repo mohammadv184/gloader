@@ -10,15 +10,16 @@ import (
 type Type interface {
 	GetTypeName() string
 	GetTypeKind() Kind
-	GetTypeSize() int
 }
 
 type ValueType interface {
 	Type
 	Parse(v any) error
+	GetTypeSize() uint64
 	GetValue() any
 	To(t ValueType) (ValueType, error)
 	AssignTo(t any) error
+	Clone() ValueType
 }
 
 type BaseValueType struct{}
@@ -35,11 +36,16 @@ func (_ *BaseValueType) GetTypeKind() Kind {
 func (b *BaseValueType) GetTypeName() string {
 	return reflect.TypeOf(b).String()
 }
-func (b *BaseValueType) GetTypeSize() int {
-	return int(unsafe.Sizeof(b))
+func (b *BaseValueType) GetTypeSize() uint64 {
+	return uint64(unsafe.Sizeof(b))
 }
 func (b *BaseValueType) GetValue() any {
 	return nil
+}
+func (b *BaseValueType) Clone() ValueType {
+	valueType := reflect.New(reflect.TypeOf(b).Elem()).Interface().(ValueType)
+	_ = valueType.Parse(b.GetValue())
+	return valueType
 }
 func (b *BaseValueType) To(t ValueType) (ValueType, error) {
 	if b.GetTypeKind() != t.GetTypeKind() {

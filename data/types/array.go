@@ -27,8 +27,8 @@ func (t *ArrayType) GetTypeKind() data.Kind {
 func (t *ArrayType) GetTypeName() string {
 	return "array"
 }
-func (t *ArrayType) GetTypeSize() int {
-	return int(unsafe.Sizeof(t.value))
+func (t *ArrayType) GetTypeSize() uint64 {
+	return uint64(unsafe.Sizeof(t.value))
 }
 func (t *ArrayType) GetValue() any {
 	return t.value

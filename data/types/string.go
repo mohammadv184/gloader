@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"gloader/data"
+	"unsafe"
 )
 
 type StringType struct {
@@ -28,8 +29,8 @@ func (t *StringType) GetTypeKind() data.Kind {
 func (t *StringType) GetTypeName() string {
 	return "string"
 }
-func (t *StringType) GetTypeSize() int {
-	return len(t.value)
+func (t *StringType) GetTypeSize() uint64 {
+	return uint64(unsafe.Sizeof(t.value))
 }
 func (t *StringType) GetValue() any {
 	return t.value

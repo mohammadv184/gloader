@@ -4,6 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"gloader/data"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,7 +17,12 @@ type CharType struct {
 }
 
 func (t *CharType) Parse(v any) error {
-	t.value = fmt.Sprintf("%v", v)
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = fmt.Sprintf("%s", v)
 	return nil
 }
 func (t *CharType) GetTypeKind() data.Kind {
@@ -22,8 +31,8 @@ func (t *CharType) GetTypeKind() data.Kind {
 func (t *CharType) GetTypeName() string {
 	return "CHAR"
 }
-func (t *CharType) GetTypeSize() int {
-	return len(t.value)
+func (t *CharType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
 }
 func (t *CharType) GetValue() any {
 	return t.value
@@ -35,6 +44,10 @@ type SmallIntType struct {
 }
 
 func (t *SmallIntType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
 	switch v.(type) {
 	case int8:
 		t.value = int16(v.(int8))
@@ -60,6 +73,14 @@ func (t *SmallIntType) Parse(v any) error {
 	case uint64:
 		t.value = int16(v.(uint64))
 		return nil
+	case []byte:
+		v, err := strconv.ParseInt(string(v.([]byte)), 10, 16)
+		if err != nil {
+			return err
+		}
+		t.value = int16(v)
+		return nil
+
 	default:
 		return fmt.Errorf("%v: expected int16, got %T", data.ErrInvalidValue, v)
 	}
@@ -70,7 +91,7 @@ func (t *SmallIntType) GetTypeKind() data.Kind {
 func (t *SmallIntType) GetTypeName() string {
 	return "SMALLINT"
 }
-func (t *SmallIntType) GetTypeSize() int {
+func (t *SmallIntType) GetTypeSize() uint64 {
 	return 2
 }
 func (t *SmallIntType) GetValue() any {
@@ -83,6 +104,11 @@ type BigIntType struct {
 }
 
 func (t *BigIntType) Parse(v any) error {
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
 	switch v.(type) {
 	case int8:
 		t.value = int64(v.(int8))
@@ -108,6 +134,13 @@ func (t *BigIntType) Parse(v any) error {
 	case uint64:
 		t.value = int64(v.(uint64))
 		return nil
+	case []byte:
+		v, err := strconv.ParseInt(string(v.([]byte)), 10, 64)
+		if err != nil {
+			return err
+		}
+		t.value = v
+		return nil
 	default:
 		return fmt.Errorf("%v: expected int64, got %T", data.ErrInvalidValue, v)
 	}
@@ -118,7 +151,7 @@ func (t *BigIntType) GetTypeKind() data.Kind {
 func (t *BigIntType) GetTypeName() string {
 	return "BIGINT"
 }
-func (t *BigIntType) GetTypeSize() int {
+func (t *BigIntType) GetTypeSize() uint64 {
 	return 8
 }
 func (t *BigIntType) GetValue() any {
@@ -131,7 +164,11 @@ type LongBlobType struct {
 }
 
 func (t *LongBlobType) Parse(v any) error {
-	t.value = []byte(fmt.Sprintf("%v", v))
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = []byte(fmt.Sprintf("%s", v))
 	return nil
 }
 func (t *LongBlobType) GetTypeKind() data.Kind {
@@ -140,8 +177,8 @@ func (t *LongBlobType) GetTypeKind() data.Kind {
 func (t *LongBlobType) GetTypeName() string {
 	return "LONGBLOB"
 }
-func (t *LongBlobType) GetTypeSize() int {
-	return len(t.value)
+func (t *LongBlobType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
 }
 func (t *LongBlobType) GetValue() any {
 	return t.value
@@ -153,21 +190,33 @@ type DateTimeType struct {
 }
 
 func (t *DateTimeType) Parse(v any) error {
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
 	switch v.(type) {
 	case time.Time:
 		t.value = v.(time.Time)
+		return nil
+	case []byte:
+		v, err := time.Parse("2006-01-02 15:04:05", string(v.([]byte)))
+		if err != nil {
+			return err
+		}
+		t.value = v
 		return nil
 	default:
 		return fmt.Errorf("%v: expected time.Time, got %T", data.ErrInvalidValue, v)
 	}
 }
 func (t *DateTimeType) GetTypeKind() data.Kind {
-	return data.KindTime
+	return data.KindDateTime
 }
 func (t *DateTimeType) GetTypeName() string {
 	return "DATETIME"
 }
-func (t *DateTimeType) GetTypeSize() int {
+func (t *DateTimeType) GetTypeSize() uint64 {
 	return 8
 }
 func (t *DateTimeType) GetValue() any {
@@ -186,6 +235,8 @@ var typeNamesMap = map[string]data.Type{
 }
 
 func GetTypeFromName(name string) (data.Type, error) {
+	name = strings.ToUpper(regexp.MustCompile(`\(.*\).*`).ReplaceAllString(name, ""))
+
 	t, ok := typeNamesMap[name]
 	if !ok {
 		return nil, ErrTypeNotFound

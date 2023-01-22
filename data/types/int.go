@@ -39,7 +39,7 @@ func (t *IntegerType) GetTypeKind() data.Kind {
 func (t *IntegerType) GetTypeName() string {
 	return "int"
 }
-func (t *IntegerType) GetTypeSize() int {
+func (t *IntegerType) GetTypeSize() uint64 {
 	return 8
 }
 func (t *IntegerType) GetValue() any {
