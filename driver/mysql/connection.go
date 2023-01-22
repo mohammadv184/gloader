@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gloader/data"
 	"gloader/driver"
+	"reflect"
 )
 
 type Connection struct {
@@ -16,23 +17,24 @@ type Connection struct {
 func (m *Connection) Close() error {
 	return m.conn.Close()
 }
-func (m *Connection) GetDataBaseDetails() (driver.DataBaseDetails, error) {
-	databaseInfo := driver.DataBaseDetails{
+func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
+	databaseInfo := &driver.DataBaseDetails{
 		Name:            m.dbName,
 		DataCollections: make([]driver.DataCollectionDetails, 0),
 	}
 
 	tables, err := m.conn.Query("SHOW TABLES")
 	if err != nil {
-		return databaseInfo, err
+		return nil, err
 	}
 	defer tables.Close()
 
 	for tables.Next() {
 		var tableName string
 		err = tables.Scan(&tableName)
+
 		if err != nil {
-			return databaseInfo, err
+			return nil, err
 		}
 
 		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetails{
@@ -45,18 +47,19 @@ func (m *Connection) GetDataBaseDetails() (driver.DataBaseDetails, error) {
 	for i, table := range databaseInfo.DataCollections {
 		columns, err := m.conn.Query("SHOW COLUMNS FROM " + table.Name)
 		if err != nil {
-			return databaseInfo, err
+			return nil, err
 		}
 
 		for columns.Next() {
 			var columnName, columnType string
-			err = columns.Scan(&columnName, &columnType)
+			var null any
+			err = columns.Scan(&columnName, &columnType, &null, &null, &null, &null)
 			if err != nil {
-				return databaseInfo, err
+				return nil, err
 			}
 			t, err := GetTypeFromName(columnType)
 			if err != nil {
-				return databaseInfo, err
+				return nil, err
 			}
 
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
@@ -64,14 +67,14 @@ func (m *Connection) GetDataBaseDetails() (driver.DataBaseDetails, error) {
 
 		rows, err := m.conn.Query("SELECT COUNT(*) FROM " + table.Name)
 		if err != nil {
-			return databaseInfo, err
+			return nil, err
 		}
 
 		for rows.Next() {
 			var count int
 			err = rows.Scan(&count)
 			if err != nil {
-				return databaseInfo, err
+				return nil, err
 			}
 			databaseInfo.DataCollections[i].DataSetCount = count
 		}
@@ -81,7 +84,7 @@ func (m *Connection) GetDataBaseDetails() (driver.DataBaseDetails, error) {
 	return databaseInfo, nil
 }
 
-func (m *Connection) StartReader(dataCollection string, dataMap map[string]data.Type, startOffset, endOffset uint64) <-chan *data.Batch {
+func (m *Connection) StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset uint64) <-chan *data.Batch {
 	readerCh := make(chan *data.Batch)
 	// TODO: rowPerBatch should be configurable dynamically
 	rowPerBatch := 50
@@ -90,6 +93,13 @@ func (m *Connection) StartReader(dataCollection string, dataMap map[string]data.
 		defer close(readerCh)
 
 		for i := startOffset; i <= endOffset; i += uint64(rowPerBatch) {
+			if i+uint64(rowPerBatch) > endOffset {
+				rowPerBatch = int(endOffset - i)
+				if rowPerBatch == 0 {
+					break
+				}
+			}
+
 			batch := data.NewDataBatch()
 			rows, err := m.conn.Query("SELECT * FROM " + dataCollection + " LIMIT " + fmt.Sprintf("%d", i) + ", " + fmt.Sprintf("%d", rowPerBatch) + m.FiltersToSQL())
 
@@ -97,6 +107,10 @@ func (m *Connection) StartReader(dataCollection string, dataMap map[string]data.
 				panic(err)
 			}
 
+			columnNames, err := rows.Columns()
+			if err != nil {
+				panic(err)
+			}
 			for rows.Next() {
 				row := make([]interface{}, len(dataMap))
 				for i := range row {
@@ -108,20 +122,20 @@ func (m *Connection) StartReader(dataCollection string, dataMap map[string]data.
 				}
 
 				rowData := data.NewDataSet()
-				i := 0
-				for columnName, dataType := range dataMap {
-					dType := dataType
-					err := dType.Parse(row[i])
+				for i, r := range row {
+					dataType := reflect.New(reflect.TypeOf(dataMap[columnNames[i]]).Elem()).Interface().(data.ValueType)
+
+					err := dataType.Parse(r)
 					if err != nil {
 						panic(err)
 					}
 
-					rowData.Set(columnName, dType)
+					rowData.Set(columnNames[i], dataType)
 				}
 				batch.Add(rowData)
-				rows.Close()
 			}
 			readerCh <- batch
+			rows.Close()
 		}
 	}()
 
