@@ -5,7 +5,12 @@ import (
 )
 
 var (
-	ErrDriverNotFound    = errors.New("driver not found")
-	ErrDriverNotReadable = errors.New("driver is not readable")
-	ErrDriverNotWritable = errors.New("driver is not writable")
+	ErrDriverNotFound = errors.New("driver not found")
+)
+var (
+	ErrConnectionNotReadable = errors.New("connection is not readable")
+	ErrConnectionNotWritable = errors.New("connection not writable")
+)
+var (
+	ErrConnectionPoolOutOfIndex = errors.New("connection pool out of index")
 )

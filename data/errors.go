@@ -9,3 +9,8 @@ var (
 	ErrDestMustBePointer       = errors.New("destination must be a pointer")
 	ErrDestNotAssignable       = errors.New("destination is not assignable")
 )
+
+var (
+	ErrBufferAlreadyIsClosed = errors.New("buffer already is closed")
+	ErrBufferIsClosed        = errors.New("buffer is closed")
+)
