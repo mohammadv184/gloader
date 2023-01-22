@@ -8,15 +8,18 @@ import (
 // Batch is a collection of data sets.
 type Batch []*Set
 
-func (b *Batch) Add(set *Set) {
-	*b = append(*b, set)
+func (b *Batch) Add(set ...*Set) {
+	*b = append(*b, set...)
 }
 func (b *Batch) Get(index int) *Set {
+	if index >= b.GetLength() {
+		return nil
+	}
 	return (*b)[index]
 }
 
 func (b *Batch) Pop() *Set {
-	if b.GetSize() == 0 {
+	if b.GetLength() == 0 {
 		return nil
 	}
 	set := b.Get(0)
@@ -24,9 +27,19 @@ func (b *Batch) Pop() *Set {
 	return set
 }
 
-func (b *Batch) GetSize() int {
+// GetSize returns the size of the batch in bytes.
+func (b *Batch) GetSize() uint64 {
+	var size uint64
+	for _, set := range *b {
+		size += set.GetSize()
+	}
+	return size
+}
+
+func (b *Batch) GetLength() int {
 	return len(*b)
 }
+
 func (b *Batch) Remove(index int) {
 	*b = append((*b)[:index], (*b)[index+1:]...)
 }
@@ -66,8 +79,10 @@ func (b *Batch) ToCSV() []byte {
 				value = fmt.Sprintf("%d", data.GetValue().GetValue())
 			case KindFloat:
 				value = fmt.Sprintf("%f", data.GetValue().GetValue())
-			case KindString:
-				value = fmt.Sprintf("%s", data.GetValue().GetValue())
+			case KindBytes:
+				value = fmt.Sprintf("%s", string(data.GetValue().GetValue().([]byte)))
+			default:
+				value = fmt.Sprintf("%v", data.GetValue().GetValue())
 			}
 			if j == 0 {
 				buf.WriteString(value)
