@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Set is a collection of related data. It`s used to collect and organize data.
@@ -23,9 +24,20 @@ func (d *Set) Get(key string) *Data {
 func (d *Set) GetByIndex(index int) *Data {
 	return (*d)[index]
 }
-func (d *Set) GetSize() int {
+
+// GetSize returns the size of the data set in bytes.
+func (d *Set) GetSize() uint64 {
+	var size uint64
+	for _, data := range *d {
+		size += data.GetSize()
+	}
+	return size
+}
+
+func (d *Set) GetLength() int {
 	return len(*d)
 }
+
 func (d *Set) Remove(key string) {
 	for i, data := range *d {
 		if data.GetKey() == key {
@@ -59,7 +71,19 @@ func (d *Set) String(delimiter string) string {
 		if i > 0 {
 			s.WriteString(delimiter)
 		}
-		s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue()))
+		switch data.GetValue().GetTypeKind() {
+		case KindInt, KindInt8, KindInt16, KindInt32, KindInt64,
+			KindUint, KindUint8, KindUint16, KindUint32, KindUint64,
+			KindFloat32, KindFloat64:
+			s.WriteString(fmt.Sprintf("%v", data.GetValue().GetValue()))
+		case KindBool:
+			s.WriteString(fmt.Sprintf("%t", data.GetValue().GetValue()))
+		case KindDateTime:
+			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05")))
+		default:
+			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue()))
+		}
+
 	}
 	return s.String()
 }
