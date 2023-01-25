@@ -94,7 +94,7 @@ func (fb *DefaultFilterBuilder) ResetFilters() {
 	fb.filters = []*Filter{}
 }
 
-func (fb *DefaultFilterBuilder) FiltersToSQL() string {
+func (fb *DefaultFilterBuilder) BuildFilterSQL() string {
 	if len(fb.filters) == 0 {
 		return ""
 	}
