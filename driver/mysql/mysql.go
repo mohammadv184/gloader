@@ -2,29 +2,14 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
 	"gloader/driver"
 	"log"
-	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type MySQL struct{}
-
-type Config struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	Database string
-}
-
-var config = Config{
-	Host:     "localhost",
-	Port:     3306,
-	Username: "root",
-	Database: "default",
-}
 
 func init() {
 	err := driver.Register(&MySQL{})
@@ -37,11 +22,20 @@ func (m *MySQL) GetDriverName() string {
 	return "mysql"
 }
 func (m *MySQL) Open(name string) (driver.Connection, error) {
-	dbName := name[strings.LastIndex(name, "/")+1:]
-	conn, err := sql.Open("mysql", name)
+	config, err := parseConfig(name)
+	fmt.Println(config.String())
 	if err != nil {
 		return nil, err
 	}
 
-	return &Connection{conn: conn, dbName: dbName}, nil
+	conn, err := sql.Open("mysql", config.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := conn.Ping(); err != nil {
+		return nil, err
+	}
+
+	return &Connection{conn: conn, config: config}, nil
 }

@@ -22,10 +22,19 @@ func (m *Cockroach) GetDriverName() string {
 }
 
 func (m *Cockroach) Open(dsn string) (driver.Connection, error) {
-	conn, err := sql.Open("postgres", dsn)
+	config, err := parseConfig(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Connection{conn: conn}, nil
+	conn, err := sql.Open("postgres", config.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := conn.Ping(); err != nil {
+		return nil, err
+	}
+
+	return &Connection{conn: conn, config: config}, nil
 }
