@@ -67,7 +67,6 @@ func parseConfig(name string) (*Config, error) {
 	result := make(map[string]string)
 	for i, name := range regex.SubexpNames() {
 		if i != 0 && name != "" && match[i] != "" {
-			fmt.Println(name, match[i])
 			result[name] = match[i]
 		}
 	}

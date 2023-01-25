@@ -13,6 +13,7 @@ import (
 type Connection struct {
 	conn   *sql.DB
 	dbName string
+	config *Config
 }
 
 func (m *Connection) Close() error {
@@ -72,11 +73,14 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(pq.CopyIn(table, dataBatch.Get(0).GetKeys()...))
 	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
 
 	for _, dataSet := range *dataBatch {
 		values := make([]interface{}, dataSet.GetLength())
@@ -91,8 +95,10 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 
 	_, err = stmt.Exec()
 	if err != nil {
-		for _, dataSet := range *dataBatch {
-			fmt.Println(dataSet.String(", "))
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == "23505" { // 23505 is the unique_violation error code
+				fmt.Println("Unique violation detected: ", err.Detail, table)
+			}
 		}
 		fmt.Println("Error executing statement")
 		return err

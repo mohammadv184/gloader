@@ -23,7 +23,7 @@ type WritableConnection interface {
 
 type ReadableConnection interface {
 	Connection
-	StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset uint64) <-chan *data.Batch
+	StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset, rowPerBatch uint64) <-chan *data.Batch
 }
 
 type DataBaseDetails struct {
@@ -38,13 +38,50 @@ type DataCollectionDetails struct {
 }
 
 type Connector struct {
+	DefaultSortBuilder
+	DefaultFilterBuilder
 	dsn    string
 	driver Driver
 }
 
 func (c *Connector) Connect() (Connection, error) {
-	return c.driver.Open(c.dsn)
+	conn, err := c.driver.Open(c.dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	if fConn, ok := conn.(FilterableConnection); ok {
+		for _, filter := range c.GetFilters() {
+			fConn.(FilterableConnection).WhereCondition(filter.GetCondition(), filter.GetKey(), filter.GetValue())
+		}
+	}
+
+	if sConn, ok := conn.(SortableConnection); ok {
+		for _, sort := range c.GetSorts() {
+			sConn.(SortableConnection).OrderBy(sort.GetKey(), sort.GetDirection())
+		}
+	}
+	return conn, nil
 }
+
+func (c *Connector) IsWritable() bool {
+	conn, err := c.Connect()
+	if err != nil {
+		panic(err)
+	}
+	_, ok := conn.(WritableConnection)
+	return ok
+}
+
+func (c *Connector) IsReadable() bool {
+	conn, err := c.Connect()
+	if err != nil {
+		panic(err)
+	}
+	_, ok := conn.(ReadableConnection)
+	return ok
+}
+
 func (c *Connector) GetDriver() Driver {
 	return c.driver
 }
