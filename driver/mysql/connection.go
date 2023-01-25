@@ -10,8 +10,9 @@ import (
 
 type Connection struct {
 	driver.DefaultFilterBuilder
+	driver.DefaultSortBuilder
 	conn   *sql.DB
-	dbName string
+	config *Config
 }
 
 func (m *Connection) Close() error {
@@ -19,7 +20,7 @@ func (m *Connection) Close() error {
 }
 func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	databaseInfo := &driver.DataBaseDetails{
-		Name:            m.dbName,
+		Name:            m.config.Database,
 		DataCollections: make([]driver.DataCollectionDetails, 0),
 	}
 
@@ -65,7 +66,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
 		}
 
-		rows, err := m.conn.Query("SELECT COUNT(*) FROM " + table.Name)
+		rows, err := m.conn.Query("SELECT COUNT(*) FROM " + table.Name + m.BuildFilterSQL())
 		if err != nil {
 			return nil, err
 		}
@@ -84,24 +85,23 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	return databaseInfo, nil
 }
 
-func (m *Connection) StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset uint64) <-chan *data.Batch {
+func (m *Connection) StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset, rowPerBatch uint64) <-chan *data.Batch {
 	readerCh := make(chan *data.Batch)
-	// TODO: rowPerBatch should be configurable dynamically
-	rowPerBatch := 50
 
 	go func() {
 		defer close(readerCh)
 
-		for i := startOffset; i <= endOffset; i += uint64(rowPerBatch) {
+		for i := startOffset; i < endOffset; i += rowPerBatch {
+			fmt.Println("Reading from", i, "to", i+rowPerBatch)
 			if i+uint64(rowPerBatch) > endOffset {
-				rowPerBatch = int(endOffset - i)
+				rowPerBatch = endOffset - i
 				if rowPerBatch == 0 {
 					break
 				}
 			}
 
 			batch := data.NewDataBatch()
-			rows, err := m.conn.Query("SELECT * FROM " + dataCollection + " LIMIT " + fmt.Sprintf("%d", i) + ", " + fmt.Sprintf("%d", rowPerBatch) + m.FiltersToSQL())
+			rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL() + m.BuildSortSQL() + " LIMIT " + fmt.Sprint(i) + ", " + fmt.Sprint(rowPerBatch))
 
 			if err != nil {
 				panic(err)
