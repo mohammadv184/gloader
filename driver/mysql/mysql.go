@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
 	"gloader/driver"
 	"log"
 
@@ -23,7 +22,6 @@ func (m *MySQL) GetDriverName() string {
 }
 func (m *MySQL) Open(name string) (driver.Connection, error) {
 	config, err := parseConfig(name)
-	fmt.Println(config.String())
 	if err != nil {
 		return nil, err
 	}

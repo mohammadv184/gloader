@@ -1,25 +1,11 @@
 package gloader
 
 import (
-	"errors"
 	"fmt"
 	"gloader/data"
 	"gloader/driver"
 	"log"
 	"sync"
-)
-
-const (
-	defaultRowsPerBatch = 50
-	defaultWorkers      = 2
-)
-
-var (
-	ErrBufferNotSet                 = errors.New("buffer not set")
-	ErrConnectionPoolNotSet         = errors.New("connection pool not set")
-	ErrDataMapNotSet                = errors.New("data map not set")
-	ErrEndOffsetLessThanStartOffset = errors.New("end offset less than start offset")
-	ErrEndOffsetRequired            = errors.New("end offset required")
 )
 
 type Reader struct {
@@ -57,6 +43,13 @@ func (r *Reader) SetEndOffset(endOffset uint64) {
 }
 
 func (r *Reader) Start() error {
+	defer func() {
+		fmt.Println("closing buffer")
+		err := r.buffer.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 	if r.buffer == nil {
 		return ErrBufferNotSet
 	}
@@ -87,16 +80,11 @@ func (r *Reader) Start() error {
 		}
 
 		sConn := conn.(driver.ReadableConnection)
-		readChs[i] = sConn.StartReader(r.dataCollection, *r.dataMap, startOffset, endOffset)
+		readChs[i] = sConn.StartReader(r.dataCollection, *r.dataMap, startOffset, endOffset, r.rowPerBatch)
 	}
 	fmt.Println(len(readChs))
 
 	r.fanIn(readChs)
-	fmt.Println("closing buffer")
-	err := r.buffer.Close()
-	if err != nil {
-		return err
-	}
 
 	return r.connectionP.Close()
 }
@@ -106,10 +94,10 @@ func (r *Reader) fanIn(readChs []<-chan *data.Batch) {
 	wg.Add(len(readChs))
 	//fmt.Println(len(readChs))
 	for _, readCh := range readChs {
-		go func(readCh <-chan *data.Batch) {
+		go func(rCh <-chan *data.Batch) {
 			for {
 				select {
-				case batch, ok := <-readCh:
+				case batch, ok := <-rCh:
 					fmt.Println("readCh recived a data batch")
 					if !ok {
 						fmt.Println("batch readCh closed", r.buffer.GetLength())

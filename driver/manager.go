@@ -1,5 +1,7 @@
 package driver
 
+import "fmt"
+
 type Manager struct {
 	drivers map[string]Driver
 }
@@ -27,7 +29,10 @@ func (dm *Manager) Register(driver Driver) error {
 }
 
 func (dm *Manager) GetDriver(driverName string) (Driver, error) {
-	return dm.drivers[driverName], nil
+	if driver, ok := dm.drivers[driverName]; ok {
+		return driver, nil
+	}
+	return nil, fmt.Errorf("%v: %s", ErrDriverNotFound, driverName)
 }
 
 func (dm *Manager) Drivers() map[string]Driver {

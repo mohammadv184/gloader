@@ -1,34 +1,98 @@
 package gloader
 
 import (
+	"errors"
+	"fmt"
 	"gloader/data"
 	"gloader/driver"
 	"log"
 	"sync"
 )
 
+const (
+	defaultRowsPerBatch = 100
+	defaultWorkers      = 5
+)
+
+var (
+	ErrBufferNotSet                 = errors.New("buffer not set")
+	ErrConnectionPoolNotSet         = errors.New("connection pool not set")
+	ErrDataMapNotSet                = errors.New("data map not set")
+	ErrEndOffsetLessThanStartOffset = errors.New("end offset less than start offset")
+	ErrEndOffsetRequired            = errors.New("end offset required")
+	ErrSrcConnectionIsRequired      = errors.New("source connection is required")
+)
+
 type GLoader struct {
 	srcConnector  *driver.Connector
 	destConnector *driver.Connector
+	rowsPerBatch  uint64
+	workers       uint
 }
 
 func NewGLoader() *GLoader {
-	return &GLoader{}
+	return &GLoader{
+		rowsPerBatch: defaultRowsPerBatch,
+		workers:      defaultWorkers,
+	}
 }
 
-func (g *GLoader) Source(name, dsn string) *GLoader {
-	d, _ := driver.GetDriver(name)
+func (g *GLoader) Source(name, dsn string) error {
+	d, err := driver.GetDriver(name)
+	if err != nil {
+		return err
+	}
 
-	g.srcConnector = driver.NewConnector(d, dsn)
+	dc := driver.NewConnector(d, dsn)
+
+	if !dc.IsReadable() {
+		return driver.ErrConnectionNotReadable
+	}
+
+	g.srcConnector = dc
+	return nil
+}
+
+func (g *GLoader) Dest(name, dsn string) error {
+	d, err := driver.GetDriver(name)
+	if err != nil {
+		return err
+	}
+	dc := driver.NewConnector(d, dsn)
+
+	if !dc.IsWritable() {
+		return driver.ErrConnectionNotWritable
+	}
+
+	g.destConnector = dc
+	return nil
+}
+
+func (g *GLoader) Filter(key string, condition driver.Condition, value string) *GLoader {
+	if g.srcConnector == nil {
+		panic(ErrSrcConnectionIsRequired)
+	}
+	g.srcConnector.WhereCondition(condition, key, value)
 	return g
 }
 
-func (g *GLoader) Dest(name, dsn string) *GLoader {
-	d, _ := driver.GetDriver(name)
-
-	g.destConnector = driver.NewConnector(d, dsn)
+func (g *GLoader) OrderBy(key string, direction driver.Direction) *GLoader {
+	if g.srcConnector == nil {
+		panic(ErrSrcConnectionIsRequired)
+	}
+	g.srcConnector.OrderBy(key, direction)
 	return g
 }
+
+func (g *GLoader) SetRowsPerBatch(rowsPerBatch uint64) *GLoader {
+	g.rowsPerBatch = rowsPerBatch
+	return g
+}
+func (g *GLoader) SetWorkers(workers uint) *GLoader {
+	g.workers = workers
+	return g
+}
+
 func (g *GLoader) Start() error {
 	srcConn, err := g.srcConnector.Connect()
 	if err != nil {
@@ -44,7 +108,7 @@ func (g *GLoader) Start() error {
 	wg := sync.WaitGroup{}
 	for _, dc := range sDetails.DataCollections {
 		wg.Add(2)
-
+		fmt.Println("Starting to load", dc.Name, "from", 0, "to", dc.DataSetCount)
 		buffer := data.NewBuffer()
 
 		rConnectionPool := driver.NewConnectionPool(g.srcConnector)
@@ -52,8 +116,12 @@ func (g *GLoader) Start() error {
 
 		reader := NewReader(dc.Name, buffer, &dc.DataMap, rConnectionPool)
 		reader.SetEndOffset(uint64(dc.DataSetCount))
+		reader.SetRowsPerBatch(g.rowsPerBatch)
+		reader.SetWorkers(g.workers)
 
 		writer := NewWriter(dc.Name, buffer, wConnectionPool)
+		writer.SetRowsPerBatch(g.rowsPerBatch)
+		writer.SetWorkers(g.workers)
 
 		go func(reader *Reader, rcPool *driver.ConnectionPool) {
 			err := reader.Start()
