@@ -9,12 +9,16 @@ import (
 // DefaultMaxBufferSize is the default maximum size of the buffer in bytes.
 const DefaultMaxBufferSize = 1024 * 1024 * 256 // 256 MB
 
+const DefaultMaxBufferLength = 500000
+
 type Buffer struct {
 	data *Batch
 
 	locker *sync.RWMutex
 
 	maxSize uint64
+
+	maxLength uint64
 
 	close chan any
 }
@@ -26,10 +30,11 @@ func NewBuffer(size ...uint64) *Buffer {
 	}
 
 	return &Buffer{
-		data:    NewDataBatch(),
-		maxSize: bSize,
-		close:   make(chan any),
-		locker:  &sync.RWMutex{},
+		data:      NewDataBatch(),
+		maxSize:   bSize,
+		close:     make(chan any),
+		locker:    &sync.RWMutex{},
+		maxLength: DefaultMaxBufferLength,
 	}
 }
 
@@ -46,7 +51,7 @@ func (b *Buffer) Write(data ...*Set) error {
 
 func (b *Buffer) Read() (*Set, error) {
 	for {
-		data, err := b.readDataSet()
+		data, err := b.popDataSet()
 
 		if data != nil || err != nil {
 			if errors.Is(err, ErrBufferIsClosed) {
@@ -57,7 +62,7 @@ func (b *Buffer) Read() (*Set, error) {
 	}
 }
 
-func (b *Buffer) readDataSet() (*Set, error) {
+func (b *Buffer) popDataSet() (*Set, error) {
 	for {
 		if b.IsClosed() && b.IsEmpty() {
 			fmt.Println("buffer is closed")
@@ -68,8 +73,8 @@ func (b *Buffer) readDataSet() (*Set, error) {
 		}
 		break
 	}
-	b.locker.RLock()
-	defer b.locker.RUnlock()
+	b.locker.Lock()
+	defer b.locker.Unlock()
 	return b.data.Pop(), nil
 }
 
@@ -80,20 +85,14 @@ func (b *Buffer) Clear() {
 }
 
 func (b *Buffer) GetSize() uint64 {
-	b.locker.RLock()
-	defer b.locker.RUnlock()
 	return b.data.GetSize()
 }
 
 func (b *Buffer) GetLength() int {
-	b.locker.RLock()
-	defer b.locker.RUnlock()
 	return b.data.GetLength()
 }
 
 func (b *Buffer) IsEmpty() bool {
-	b.locker.RLock()
-	defer b.locker.RUnlock()
 	return b.data.GetLength() == 0
 }
 
@@ -101,7 +100,11 @@ func (b *Buffer) Clone() *Buffer {
 	b.locker.RLock()
 	defer b.locker.RUnlock()
 	return &Buffer{
-		data: b.data.Clone(),
+		data:      b.data.Clone(),
+		locker:    &sync.RWMutex{},
+		maxSize:   b.maxSize,
+		close:     make(chan any),
+		maxLength: b.maxLength,
 	}
 }
 
@@ -131,6 +134,15 @@ func (b *Buffer) checkMaxSize() {
 				return
 			}
 			fmt.Println("checkMaxSize loop")
+		}
+	}
+
+	if b.maxLength < uint64(b.GetLength()) {
+		for {
+			if b.maxLength > uint64(b.GetLength()) {
+				return
+			}
+			//fmt.Println("checkMaxLength loop")
 		}
 	}
 }

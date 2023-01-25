@@ -57,6 +57,10 @@ func (b *Batch) Clone() *Batch {
 
 // ToCSV converts the data batch to a RFC4180-compliant CSV string.
 func (b *Batch) ToCSV() []byte {
+	if b == nil {
+		return nil
+	}
+
 	var buf bytes.Buffer
 	for i, set := range *b {
 		if i == 0 {
