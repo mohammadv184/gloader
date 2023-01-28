@@ -7,10 +7,10 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -v -o gloader
+RUN go build -v -o gloader ./cmd/gloader
 
 FROM debian:buster-slim
 
 COPY --from=builder /gloader/gloader ./gloader
 
-CMD [ "./gloader" ]
+ENTRYPOINT [ "./gloader" ]
