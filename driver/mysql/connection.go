@@ -85,59 +85,51 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	return databaseInfo, nil
 }
 
-func (m *Connection) StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset, rowPerBatch uint64) <-chan *data.Batch {
-	readerCh := make(chan *data.Batch)
+func (m *Connection) Read(dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
+	fmt.Println("Reading from", startOffset, "to", endOffset)
 
-	go func() {
-		defer close(readerCh)
+	batch := data.NewDataBatch()
+	rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL() + m.BuildSortSQL() + " LIMIT " + fmt.Sprint(startOffset) + ", " + fmt.Sprint(endOffset-startOffset))
+	if err != nil {
+		return nil, err
+	}
 
-		for i := startOffset; i < endOffset; i += rowPerBatch {
-			fmt.Println("Reading from", i, "to", i+rowPerBatch)
-			if i+uint64(rowPerBatch) > endOffset {
-				rowPerBatch = endOffset - i
-				if rowPerBatch == 0 {
-					break
-				}
-			}
+	defer rows.Close()
 
-			batch := data.NewDataBatch()
-			rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL() + m.BuildSortSQL() + " LIMIT " + fmt.Sprint(i) + ", " + fmt.Sprint(rowPerBatch))
-
-			if err != nil {
-				panic(err)
-			}
-
-			columnNames, err := rows.Columns()
-			if err != nil {
-				panic(err)
-			}
-			for rows.Next() {
-				row := make([]interface{}, len(dataMap))
-				for i := range row {
-					row[i] = new(interface{})
-				}
-				err = rows.Scan(row...)
-				if err != nil {
-					panic(err)
-				}
-
-				rowData := data.NewDataSet()
-				for i, r := range row {
-					dataType := reflect.New(reflect.TypeOf(dataMap[columnNames[i]]).Elem()).Interface().(data.ValueType)
-
-					err := dataType.Parse(r)
-					if err != nil {
-						panic(err)
-					}
-
-					rowData.Set(columnNames[i], dataType)
-				}
-				batch.Add(rowData)
-			}
-			readerCh <- batch
-			rows.Close()
+	columns, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		row := make([]interface{}, len(columns))
+		for i := range row {
+			row[i] = new(interface{})
 		}
-	}()
+		err = rows.Scan(row...)
+		if err != nil {
+			return nil, err
+		}
 
-	return readerCh
+		rowData := data.NewDataSet()
+		for i, c := range row {
+			dataType, err := GetTypeFromName(columns[i].DatabaseTypeName())
+			if err != nil {
+				return nil, err
+			}
+
+			vDataType, ok := dataType.(data.ValueType)
+			if !ok {
+				return nil, fmt.Errorf("Type %s is not a ValueType", reflect.TypeOf(dataType))
+			}
+
+			err = vDataType.Parse(c)
+			if err != nil {
+				return nil, err
+			}
+
+			rowData.Set(columns[i].Name(), vDataType)
+		}
+		batch.Add(rowData)
+	}
+	return batch, nil
 }

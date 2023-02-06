@@ -80,7 +80,35 @@ func (r *Reader) Start() error {
 		}
 
 		sConn := conn.(driver.ReadableConnection)
-		readChs[i] = sConn.StartReader(r.dataCollection, *r.dataMap, startOffset, endOffset, r.rowPerBatch)
+		ch := make(chan *data.Batch)
+		readChs[i] = ch
+
+		go func(readCh chan<- *data.Batch, startOffset, endOffset, rowPerBatch uint64) {
+			defer func() {
+				fmt.Println("closing readCh")
+				close(readCh)
+			}()
+
+			for i := startOffset; i < endOffset; i += rowPerBatch {
+				if i+rowPerBatch > endOffset {
+					rowPerBatch = endOffset - i
+					if rowPerBatch == 0 {
+						break
+					}
+				}
+			retryRead:
+				batch, err := sConn.Read(r.dataCollection, startOffset, endOffset)
+				if err != nil {
+					log.Println(err)
+					goto retryRead
+				}
+				if batch.GetLength() == 0 {
+					continue
+				}
+				readCh <- batch
+			}
+		}(ch, startOffset, endOffset, r.rowPerBatch)
+
 	}
 	fmt.Println(len(readChs))
 

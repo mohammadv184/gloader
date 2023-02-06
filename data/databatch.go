@@ -100,4 +100,5 @@ func (b *Batch) ToCSV() []byte {
 }
 func NewDataBatch() *Batch {
 	return &Batch{}
+
 }

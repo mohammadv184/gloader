@@ -23,7 +23,7 @@ type WritableConnection interface {
 
 type ReadableConnection interface {
 	Connection
-	StartReader(dataCollection string, dataMap data.Map, startOffset, endOffset, rowPerBatch uint64) <-chan *data.Batch
+	Read(dataCollection string, startOffset, endOffset uint64) (*data.Batch, error)
 }
 
 type DataBaseDetails struct {

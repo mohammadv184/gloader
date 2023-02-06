@@ -225,21 +225,21 @@ func (t *DateTimeType) GetValue() any {
 
 var ErrTypeNotFound = errors.New("type not found")
 
-var typeNamesMap = map[string]data.Type{
-	"CHAR":     &CharType{},
-	"SMALLINT": &SmallIntType{},
-	"BIGINT":   &BigIntType{},
-	"LONGBLOB": &LongBlobType{},
-	"DATETIME": &DateTimeType{},
-	// TODO: add more types
-}
-
 func GetTypeFromName(name string) (data.Type, error) {
 	name = strings.ToUpper(regexp.MustCompile(`\(.*\).*`).ReplaceAllString(name, ""))
 
-	t, ok := typeNamesMap[name]
-	if !ok {
+	switch name {
+	case "CHAR":
+		return &CharType{}, nil
+	case "SMALLINT":
+		return &SmallIntType{}, nil
+	case "BIGINT":
+		return &BigIntType{}, nil
+	case "LONGBLOB":
+		return &LongBlobType{}, nil
+	case "DATETIME":
+		return &DateTimeType{}, nil
+	default:
 		return nil, ErrTypeNotFound
 	}
-	return t, nil
 }
