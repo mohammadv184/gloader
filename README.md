@@ -1,3 +1,5 @@
+![logo](./assets/logo.png "GLoader")
+
 # Note: Under development :construction:
 
 # GLoader
