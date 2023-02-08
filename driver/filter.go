@@ -5,24 +5,29 @@ import (
 	"strings"
 )
 
+// Filter is a filter for a query.
 type Filter struct {
 	Condition Condition
 	Key       string
 	Value     string
 }
 
+// GetCondition returns the condition of the filter.
 func (f *Filter) GetCondition() Condition {
 	return f.Condition
 }
 
+// GetKey returns the key of the filter.
 func (f *Filter) GetKey() string {
 	return f.Key
 }
 
+// GetValue returns the value of the filter.
 func (f *Filter) GetValue() string {
 	return f.Value
 }
 
+// FilterableConnection is a connection that can be filtered.
 type FilterableConnection interface {
 	Where(key string, value string) FilterableConnection
 	WhereCondition(condition Condition, key string, value string) FilterableConnection
@@ -30,20 +35,21 @@ type FilterableConnection interface {
 	ResetFilters()
 }
 
+// Condition is a connection to a database.
 type Condition uint8
 
 const (
-	// Eq is the equal condition
+	// Eq is the equal condition.
 	Eq Condition = iota
-	// Ne is the not equal condition
+	// Ne is the not equal condition.
 	Ne
-	// Gt is the greater than condition
+	// Gt is the greater than condition.
 	Gt
-	// Lt is the less than condition
+	// Lt is the less than condition.
 	Lt
-	// Ge is the greater than or equal condition
+	// Ge is the greater than or equal condition.
 	Ge
-	// Le is the less than or equal condition
+	// Le is the less than or equal condition.
 	Le
 )
 

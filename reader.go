@@ -25,19 +25,23 @@ func NewReader(dataCollection string, buffer *data.Buffer, dataMap *data.Map, co
 		buffer:         buffer,
 		dataCollection: dataCollection,
 		dataMap:        dataMap,
-		rowPerBatch:    defaultRowsPerBatch,
-		workers:        defaultWorkers,
+		rowPerBatch:    DefaultRowsPerBatch,
+		workers:        DefaultWorkers,
 	}
 }
+
 func (r *Reader) SetRowsPerBatch(rowsPerBatch uint64) {
 	r.rowPerBatch = rowsPerBatch
 }
+
 func (r *Reader) SetWorkers(workers uint) {
 	r.workers = workers
 }
+
 func (r *Reader) SetStartOffset(startOffset uint64) {
 	r.startOffset = startOffset
 }
+
 func (r *Reader) SetEndOffset(endOffset uint64) {
 	r.endOffset = endOffset
 }
@@ -120,13 +124,13 @@ func (r *Reader) Start() error {
 func (r *Reader) fanIn(readChs []<-chan *data.Batch) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(readChs))
-	//fmt.Println(len(readChs))
+	// fmt.Println(len(readChs))
 	for _, readCh := range readChs {
 		go func(rCh <-chan *data.Batch) {
 			for {
 				select {
 				case batch, ok := <-rCh:
-					fmt.Println("readCh recived a data batch")
+					fmt.Println("readCh received a data batch")
 					if !ok {
 						fmt.Println("batch readCh closed", r.buffer.GetLength())
 						wg.Done()

@@ -4,25 +4,30 @@ import (
 	"strings"
 )
 
+// Sort is a sort for a query.
+type Sort struct {
+	Direction Direction
+	Key       string
+}
+
+// GetDirection returns the direction of the sort.
+func (s *Sort) GetDirection() Direction {
+	return s.Direction
+}
+
+// GetKey returns the key of the sort.
+func (s *Sort) GetKey() string {
+	return s.Key
+}
+
+// SortableConnection is a connection that can be sorted.
 type SortableConnection interface {
 	OrderBy(key string, direction ...Direction) SortableConnection
 	GetSorts() []*Sort
 	ResetSorts()
 }
 
-type Sort struct {
-	Direction Direction
-	Key       string
-}
-
-func (s *Sort) GetDirection() Direction {
-	return s.Direction
-}
-
-func (s *Sort) GetKey() string {
-	return s.Key
-}
-
+// Direction is direction of a sort.
 type Direction uint8
 
 const (
@@ -35,23 +40,27 @@ var directionStringMap = map[Direction]string{
 	Desc: "DESC",
 }
 
+// String returns the string representation of the direction.
 func (d Direction) String() string {
 	return directionStringMap[d]
 }
 
+// GetDirectionFromString returns the direction from a string.
 func GetDirectionFromString(direction string) Direction {
 	for k, v := range directionStringMap {
-		if strings.ToLower(v) == strings.ToLower(direction) {
+		if strings.EqualFold(v, direction) {
 			return k
 		}
 	}
 	return 0
 }
 
+// DefaultSortBuilder is a default sort builder.
 type DefaultSortBuilder struct {
 	sorts []*Sort
 }
 
+// OrderBy adds a sort to the builder.
 func (d *DefaultSortBuilder) OrderBy(key string, direction ...Direction) SortableConnection {
 	dir := Asc
 	if len(direction) > 0 {
@@ -63,13 +72,18 @@ func (d *DefaultSortBuilder) OrderBy(key string, direction ...Direction) Sortabl
 	})
 	return d
 }
+
+// GetSorts returns the sorts of the builder.
 func (d *DefaultSortBuilder) GetSorts() []*Sort {
 	return d.sorts
 }
+
+// ResetSorts resets the sorts of the builder.
 func (d *DefaultSortBuilder) ResetSorts() {
 	d.sorts = []*Sort{}
 }
 
+// BuildSortSQL builds the sort SQL.
 func (d *DefaultSortBuilder) BuildSortSQL() string {
 	if len(d.sorts) == 0 {
 		return ""

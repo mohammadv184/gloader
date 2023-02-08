@@ -26,12 +26,15 @@ func (t *StringType) Parse(p any) error {
 func (t *StringType) GetTypeKind() data.Kind {
 	return data.KindString
 }
+
 func (t *StringType) GetTypeName() string {
 	return "string"
 }
+
 func (t *StringType) GetTypeSize() uint64 {
 	return uint64(unsafe.Sizeof(t.value))
 }
+
 func (t *StringType) GetValue() any {
 	return t.value
 }

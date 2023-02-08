@@ -10,16 +10,19 @@ import (
 	"github.com/lib/pq"
 )
 
+// Connection is a connection to a CockroachDB database.
 type Connection struct {
 	conn   *sql.DB
 	dbName string
 	config *Config
 }
 
+// Close closes the connection to the database.
 func (m *Connection) Close() error {
 	return m.conn.Close()
 }
 
+// GetDetails returns the details of the database.
 func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	databaseInfo := driver.DataBaseDetails{
 		Name:            m.dbName,
@@ -47,7 +50,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	}
 
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.Query("SHOW COLUMNS FROM " + table.Name)
+		columns, err := m.conn.Query("SHOW COLUMNS FROM $1", table.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -68,6 +71,8 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 
 	return nil, nil
 }
+
+// Write writes a batch of data to the database.
 func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 	tx, err := m.conn.Begin()
 	if err != nil {
@@ -110,5 +115,4 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 	}
 
 	return tx.Commit()
-
 }

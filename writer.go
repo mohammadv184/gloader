@@ -21,16 +21,19 @@ func NewWriter(dataCollection string, buffer *data.Buffer, connectionP *driver.C
 		buffer:         buffer,
 		connectionP:    connectionP,
 		dataCollection: dataCollection,
-		workers:        defaultWorkers,
-		rowPerBatch:    defaultRowsPerBatch,
+		workers:        DefaultWorkers,
+		rowPerBatch:    DefaultRowsPerBatch,
 	}
 }
+
 func (w *Writer) SetWorkers(workers uint) {
 	w.workers = workers
 }
+
 func (w *Writer) SetRowsPerBatch(rowsPerBatch uint64) {
 	w.rowPerBatch = rowsPerBatch
 }
+
 func (w *Writer) Start() error {
 	if w.buffer == nil {
 		return ErrBufferNotSet
@@ -71,7 +74,7 @@ func (w *Writer) Start() error {
 
 						return
 					}
-					//fmt.Println("Length: ", w.dataCollection, batch.GetLength())
+					// fmt.Println("Length: ", w.dataCollection, batch.GetLength())
 					batch.Add(dSet)
 				}
 				rt := 10 // retry times

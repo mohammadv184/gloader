@@ -10,9 +10,14 @@ import (
 // also in relational database, it`s called a row.
 type Set []*Data
 
+// Add adds the given data to the set.
+// It does not check for duplicate data.
 func (d *Set) Add(data *Data) {
 	*d = append(*d, data)
 }
+
+// Get returns the data with the given key.
+// It returns nil if the data does not exist.
 func (d *Set) Get(key string) *Data {
 	for _, data := range *d {
 		if data.GetKey() == key {
@@ -21,6 +26,9 @@ func (d *Set) Get(key string) *Data {
 	}
 	return nil
 }
+
+// GetByIndex returns the data at the given index.
+// It returns nil if the index is out of range.
 func (d *Set) GetByIndex(index int) *Data {
 	return (*d)[index]
 }
@@ -34,10 +42,13 @@ func (d *Set) GetSize() uint64 {
 	return size
 }
 
+// GetLength returns the length of the data set.
 func (d *Set) GetLength() int {
 	return len(*d)
 }
 
+// Remove removes the data with the given key.
+// if the key is not found, it does nothing.
 func (d *Set) Remove(key string) {
 	for i, data := range *d {
 		if data.GetKey() == key {
@@ -46,9 +57,15 @@ func (d *Set) Remove(key string) {
 		}
 	}
 }
+
+// RemoveByIndex removes the data at the given index.
+// It does nothing if the index is out of range.
 func (d *Set) RemoveByIndex(index int) {
 	*d = append((*d)[:index], (*d)[index+1:]...)
 }
+
+// Set sets the value of the data with the given key.
+// If the data does not exist, it creates a new data with the given key and value.
 func (d *Set) Set(key string, value ValueType) {
 	for _, data := range *d {
 		if data.GetKey() == key {
@@ -58,13 +75,21 @@ func (d *Set) Set(key string, value ValueType) {
 	}
 	*d = append(*d, NewData(key, value))
 }
+
+// SetByIndex sets the value of the data at the given index.
+// It does nothing if the index is out of range.
 func (d *Set) SetByIndex(index int, value ValueType) {
 	(*d)[index].SetValue(value)
 }
+
+// Swap swaps the data at the given indexes.
 func (d *Set) Swap(i, j int) {
 	(*d)[i], (*d)[j] = (*d)[j], (*d)[i]
 }
 
+// String returns the string representation of the data set.
+// It uses the given delimiter to separate the data.
+// e.g. delimiter = ", " => "value1, value2".
 func (d *Set) String(delimiter string) string {
 	var s strings.Builder
 	for i, data := range *d {
@@ -88,6 +113,7 @@ func (d *Set) String(delimiter string) string {
 	return s.String()
 }
 
+// GetKeys returns the keys of the data set.
 func (d *Set) GetKeys() []string {
 	keys := make([]string, len(*d))
 	for i, data := range *d {
@@ -95,6 +121,8 @@ func (d *Set) GetKeys() []string {
 	}
 	return keys
 }
+
+// Clone returns a clone of the data set.
 func (d *Set) Clone() *Set {
 	clone := NewDataSet()
 	for _, data := range *d {
@@ -103,6 +131,7 @@ func (d *Set) Clone() *Set {
 	return clone
 }
 
+// NewDataSet returns a new data set.
 func NewDataSet() *Set {
 	return &Set{}
 }

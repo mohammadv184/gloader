@@ -19,15 +19,19 @@ func (t *BoolType) Parse(p any) error {
 		return fmt.Errorf("%v: expected bool, got %T", data.ErrInvalidValue, p)
 	}
 }
+
 func (t *BoolType) GetTypeKind() data.Kind {
 	return data.KindBool
 }
+
 func (t *BoolType) GetTypeName() string {
 	return "bool"
 }
+
 func (t *BoolType) GetTypeSize() uint64 {
 	return 1
 }
+
 func (t *BoolType) GetValue() any {
 	if t.value {
 		return []byte{1}

@@ -2,7 +2,7 @@ package main
 
 import "github.com/spf13/cobra"
 
-// it's populated during build time by -ldflags
+// it's populated during build time by -ldflags.
 var (
 	version = "dev"
 	commit  = "?"

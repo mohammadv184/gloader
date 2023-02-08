@@ -1,5 +1,8 @@
 package data
 
+// Kind represents the kind of value.
+// It is a subset of the reflect.Kind.
+// The zero Kind is KindUnknown.
 type Kind uint8
 
 const (
@@ -68,12 +71,16 @@ var kindNames = [...]string{
 	KindFloat64:   "float64",
 }
 
+// String returns the name of the kind.
 func (k Kind) String() string {
 	if int(k) < len(kindNames) {
 		return kindNames[k]
 	}
 	return "unknown"
 }
+
+// GetKindFromName returns the kind from the given name.
+// It returns KindUnknown if the name is not found.
 func GetKindFromName(name string) Kind {
 	for i, v := range kindNames {
 		if v == name {

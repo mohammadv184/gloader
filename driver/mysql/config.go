@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Config is the configuration for a MySQL database.
 type Config struct {
 	Host     string
 	Port     int
@@ -19,10 +20,11 @@ type Config struct {
 }
 
 const (
-	TCPProtocol    = "tcp"
-	SocketProtocol = "unix"
+	TCPProtocol    = "tcp"  // TCPProtocol is the protocol for TCP connections.
+	SocketProtocol = "unix" // SocketProtocol is the protocol for unix socket connections.
 )
 
+// String returns the DSN string.
 func (c *Config) String() string {
 	var str strings.Builder
 	str.WriteString(c.Username)
@@ -65,11 +67,11 @@ func parseConfig(name string) (*Config, error) {
 		Protocol: TCPProtocol,
 	}
 
-	regex := regexp.MustCompile(`^(?P<user>[^:]+)(:(?P<password>[^@]+))?@((?P<protocol>[^()]+)?\()?(?P<host>[^:]+)(:(?P<port>[0-9]+))?\)?(/(?P<database>[^?]+)?(\?(?P<options>.+))?)?`)
+	regex := regexp.MustCompile(`^(?P<user>[^:]+)(:(?P<password>[^@]+))?@((?P<protocol>[^()]+)?\()?(?P<host>[^:/]+)(:(?P<port>[0-9]+))?\)?(/(?P<database>[^?]+)?(\?(?P<options>.+))?)?`)
 	match := regex.FindStringSubmatch(name)
 	result := make(map[string]string)
 	for i, n := range regex.SubexpNames() {
-		if i != 0 && n != "" && match[i] != "" {
+		if i != 0 && i < len(match) && n != "" && match[i] != "" {
 			result[n] = match[i]
 		}
 	}

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultRowsPerBatch = 100
-	defaultWorkers      = 5
+	DefaultRowsPerBatch = 100
+	DefaultWorkers      = 5
 )
 
 var (
@@ -26,14 +26,16 @@ var (
 type GLoader struct {
 	srcConnector  *driver.Connector
 	destConnector *driver.Connector
+	reader        *Reader
+	writer        *Writer
 	rowsPerBatch  uint64
 	workers       uint
 }
 
 func NewGLoader() *GLoader {
 	return &GLoader{
-		rowsPerBatch: defaultRowsPerBatch,
-		workers:      defaultWorkers,
+		rowsPerBatch: DefaultRowsPerBatch,
+		workers:      DefaultWorkers,
 	}
 }
 
@@ -88,6 +90,7 @@ func (g *GLoader) SetRowsPerBatch(rowsPerBatch uint64) *GLoader {
 	g.rowsPerBatch = rowsPerBatch
 	return g
 }
+
 func (g *GLoader) SetWorkers(workers uint) *GLoader {
 	g.workers = workers
 	return g
@@ -106,6 +109,7 @@ func (g *GLoader) Start() error {
 	}
 
 	wg := sync.WaitGroup{}
+
 	for _, dc := range sDetails.DataCollections {
 		wg.Add(2)
 		fmt.Println("Starting to load", dc.Name, "from", 0, "to", dc.DataSetCount)
@@ -133,7 +137,6 @@ func (g *GLoader) Start() error {
 			if err != nil {
 				log.Println(err)
 			}
-
 		}(reader, rConnectionPool)
 
 		go func(writer *Writer, wcPool *driver.ConnectionPool) {
@@ -146,11 +149,9 @@ func (g *GLoader) Start() error {
 			if err != nil {
 				log.Println(err)
 			}
-
 		}(writer, wConnectionPool)
 
 	}
 	wg.Wait()
 	return nil
-
 }

@@ -5,9 +5,11 @@ import (
 	"gloader/driver"
 	"log"
 
+	// Import the mysql driver.
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// MySQL is a driver for MySQL.
 type MySQL struct{}
 
 func init() {
@@ -17,9 +19,12 @@ func init() {
 	}
 }
 
+// GetDriverName returns the name of the driver.
 func (m *MySQL) GetDriverName() string {
 	return "mysql"
 }
+
+// Open opens a connection to the database.
 func (m *MySQL) Open(name string) (driver.Connection, error) {
 	config, err := parseConfig(name)
 	if err != nil {

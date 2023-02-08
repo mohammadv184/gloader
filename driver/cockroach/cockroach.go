@@ -5,9 +5,11 @@ import (
 	"gloader/driver"
 	"log"
 
+	// Import the postgres driver.
 	_ "github.com/lib/pq"
 )
 
+// Cockroach is a driver for CockroachDB.
 type Cockroach struct{}
 
 func init() {
@@ -17,10 +19,12 @@ func init() {
 	}
 }
 
+// GetDriverName returns the name of the driver.
 func (m *Cockroach) GetDriverName() string {
 	return "cockroach"
 }
 
+// Open opens a connection to the database.
 func (m *Cockroach) Open(dsn string) (driver.Connection, error) {
 	config, err := parseConfig(dsn)
 	if err != nil {

@@ -33,15 +33,19 @@ func (t *IntegerType) Parse(v any) error {
 		return fmt.Errorf("%v: expected int, got %T", data.ErrInvalidValue, v)
 	}
 }
+
 func (t *IntegerType) GetTypeKind() data.Kind {
 	return data.KindInt
 }
+
 func (t *IntegerType) GetTypeName() string {
 	return "int"
 }
+
 func (t *IntegerType) GetTypeSize() uint64 {
 	return 8
 }
+
 func (t *IntegerType) GetValue() any {
 	return t.value
 }

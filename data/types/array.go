@@ -6,11 +6,15 @@ import (
 	"unsafe"
 )
 
+// ArrayType is a generic array type that can hold any array data type.
+// It implements the data.ValueType interface.
 type ArrayType struct {
 	data.BaseValueType
 	value []any
 }
 
+// Parse parses the given value and sets it to the ArrayType.
+// It returns an error if the given value is not of type []any.
 func (t *ArrayType) Parse(v any) error {
 	switch v.(type) {
 	case []any:
@@ -21,15 +25,19 @@ func (t *ArrayType) Parse(v any) error {
 	}
 }
 
+// GetTypeKind returns the data.Kind of the ArrayType.
 func (t *ArrayType) GetTypeKind() data.Kind {
 	return data.KindArray
 }
+
 func (t *ArrayType) GetTypeName() string {
 	return "array"
 }
+
 func (t *ArrayType) GetTypeSize() uint64 {
 	return uint64(unsafe.Sizeof(t.value))
 }
+
 func (t *ArrayType) GetValue() any {
 	return t.value
 }

@@ -6,8 +6,10 @@ import (
 	"gloader/data"
 	"gloader/driver"
 	"reflect"
+	"regexp"
 )
 
+// Connection is a connection to a MySQL database.
 type Connection struct {
 	driver.DefaultFilterBuilder
 	driver.DefaultSortBuilder
@@ -15,9 +17,12 @@ type Connection struct {
 	config *Config
 }
 
+// Close closes the connection to the database.
 func (m *Connection) Close() error {
 	return m.conn.Close()
 }
+
+// GetDetails returns the details of the database.
 func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	databaseInfo := &driver.DataBaseDetails{
 		Name:            m.config.Database,
@@ -46,7 +51,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	}
 
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.Query("SHOW COLUMNS FROM " + table.Name)
+		columns, err := m.conn.Query(fmt.Sprintf("SHOW COLUMNS FROM %s", table.Name))
 		if err != nil {
 			return nil, err
 		}
@@ -58,6 +63,8 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 			if err != nil {
 				return nil, err
 			}
+			columnType = regexp.MustCompile("(\\(\\d+\\)).*").ReplaceAllString(columnType, "")
+
 			t, err := GetTypeFromName(columnType)
 			if err != nil {
 				return nil, err
@@ -66,7 +73,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
 		}
 
-		rows, err := m.conn.Query("SELECT COUNT(*) FROM " + table.Name + m.BuildFilterSQL())
+		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL()))
 		if err != nil {
 			return nil, err
 		}
@@ -85,6 +92,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 	return databaseInfo, nil
 }
 
+// Read reads data from the database.
 func (m *Connection) Read(dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
 	fmt.Println("Reading from", startOffset, "to", endOffset)
 

@@ -7,46 +7,75 @@ import (
 	"unsafe"
 )
 
+// Type is the interface that has the basic data type methods.
+// It is provided GetTypeName, GetTypeKind methods.
+// All driver types must implement this interface.
+// A Type represents a type in the database.
 type Type interface {
+	// GetTypeName returns the name of the type.
 	GetTypeName() string
+	// GetTypeKind returns the kind of the type.
 	GetTypeKind() Kind
 }
 
+// ValueType is Type that holds a value.
+// It is provided Parse, GetTypeSize, GetValue, To, AssignTo, Clone methods. for handling values.
 type ValueType interface {
-	Type
+	Type // Type interface
+	// Parse parses the value and stores it in the receiver.
 	Parse(v any) error
+	// GetTypeSize returns the size of the value in bytes.
 	GetTypeSize() uint64
+	// GetValue returns the value stored in the receiver.
 	GetValue() any
+	// To converts the value to the given type.
 	To(t ValueType) (ValueType, error)
+	// AssignTo assigns the value to the given destination.
 	AssignTo(t any) error
+	// Clone returns a copy of the receiver.
 	Clone() ValueType
 }
 
+// BaseValueType implements ValueType interface.
+// It can be embedded in other types to implement ValueType interface quickly.
 type BaseValueType struct{}
 
-var _ Type = &BaseValueType{}
-
-func (_ *BaseValueType) Parse(_ any) error {
+var _ Type = &BaseValueType{} // BaseValueType implements Type interface.
+// Parse parses the value and stores it in the receiver.
+// It should be implemented by the parent type. otherwise it returns ErrParseFuncNotImplemented.
+func (*BaseValueType) Parse(_ any) error {
 	return ErrParseFuncNotImplemented
 }
 
-func (_ *BaseValueType) GetTypeKind() Kind {
+// GetTypeKind returns the kind of the type.
+// if not implemented by the parent type, it returns KindUnknown.
+func (*BaseValueType) GetTypeKind() Kind {
 	return KindUnknown
 }
+
+// GetTypeName returns the name of the type.
 func (b *BaseValueType) GetTypeName() string {
 	return reflect.TypeOf(b).String()
 }
+
+// GetTypeSize returns the size of the value in bytes.
 func (b *BaseValueType) GetTypeSize() uint64 {
 	return uint64(unsafe.Sizeof(b))
 }
+
+// GetValue returns the value stored in the receiver.
 func (b *BaseValueType) GetValue() any {
 	return nil
 }
+
+// Clone returns a copy of the receiver.
 func (b *BaseValueType) Clone() ValueType {
 	valueType := reflect.New(reflect.TypeOf(b).Elem()).Interface().(ValueType)
 	_ = valueType.Parse(b.GetValue())
 	return valueType
 }
+
+// To converts the value to the given type.
 func (b *BaseValueType) To(t ValueType) (ValueType, error) {
 	if b.GetTypeKind() != t.GetTypeKind() {
 		return nil, ErrDataTypeKindNotMatch
@@ -60,6 +89,9 @@ func (b *BaseValueType) To(t ValueType) (ValueType, error) {
 	}
 	return t, nil
 }
+
+// AssignTo assigns the value to the given destination.
+// It returns ErrDestMustBePointer if the destination is not a pointer.
 func (b *BaseValueType) AssignTo(dest any) error {
 	if reflect.TypeOf(dest).Kind() != reflect.Ptr {
 		return ErrDestMustBePointer
@@ -309,6 +341,6 @@ func (b *BaseValueType) AssignTo(dest any) error {
 		}
 		return fmt.Errorf("from int to %T: %w", dest, ErrDestNotAssignable)
 	}
-	//TODO: add more types
+	// TODO: add more types
 	return errors.New("not implemented")
 }
