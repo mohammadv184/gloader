@@ -1,0 +1,27 @@
+run:
+  go: "1.19"
+  skip-dirs:
+    - tests
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - gofumpt
+    - unconvert
+    - unparam
+    - revive
+    - misspell
+#    - errcheck
+    - goimports
+#    - gosimple
+#    - unused
+#    - gosec
+    - prealloc
+    - staticcheck
+    - godot
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
