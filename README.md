@@ -1,4 +1,11 @@
-![logo](./assets/logo.png "GLoader")
+<p align="center">
+  <img alt="gloader logo" src="assets/logo.png" height="150" />
+  <h3 align="center">gloader</h3>
+  <p align="center">Migrate data from any source to any destination in a single command!</p>
+</p>
+
+---
+
 
 # Note: Under development :construction:
 
