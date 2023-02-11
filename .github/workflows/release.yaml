@@ -9,6 +9,7 @@ permissions:
   contents: write
   packages: write
 
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest

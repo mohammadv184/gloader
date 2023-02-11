@@ -96,6 +96,10 @@ docker_manifests:
     image_templates:
       - mohammadv184/gloader:{{ .Tag }}-amd64
       - mohammadv184/gloader:{{ .Tag }}-arm64
+  - name_template: ghcr.io/mohammadv184/gloader:latest
+    image_templates:
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-amd64
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-arm64
 
 
 nfpms:
