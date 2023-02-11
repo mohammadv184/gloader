@@ -1,6 +1,6 @@
 <p align="center">
-  <img alt="gloader logo" src="assets/logo.png" height="150" />
-  <h3 align="center">gloader</h3>
+  <img alt="GLoader logo" src="assets/logo.png" height="150" />
+  <h3 align="center">GLoader</h3>
   <p align="center">Migrate data from any source to any destination in a single command!</p>
 </p>
 

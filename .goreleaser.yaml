@@ -1,5 +1,5 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
+project_name: gloader
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -8,34 +8,133 @@ builds:
   - env:
       - CGO_ENABLED=0
     goos:
-      - linux
-      - windows
       - darwin
+      - windows
+      - linux
+      - freebsd
+      - netbsd
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - 386
+      - ppc64le
+      - s390x
+      - mips64
+      - mips64le
+      - riscv64
+      - loong64
     main: ./cmd/gloader
+    binary: gloader
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+release:
+  github:
+    owner: mohammadv184
+    name: gloader
+gomod:
+  proxy: true
 archives:
   - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of uname.
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    wrap_in_directory: true
     # use zip for windows archives
     format_overrides:
     - goos: windows
       format: zip
 checksum:
-  name_template: 'checksums.txt'
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: SNAPSHOT-{{ .Commit }}
 changelog:
+  skip: true
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^tests:'
+dockers:
+  - image_templates:
+      - mohammadv184/gloader:{{ .Tag }}-amd64
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-amd64
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.name={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=gloader is database data migration tool from any source to any destination"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.licenses=MIT"
+  - image_templates:
+      - mohammadv184/gloader:{{ .Tag }}-arm64
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-arm64
+    goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.name={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=gloader is database data migration tool from any source to any destination"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+      - "--label=org.opencontainers.image.licenses=MIT"
+docker_manifests:
+  - name_template: mohammadv184/gloader:{{ .Tag }}
+    image_templates:
+      - mohammadv184/gloader:{{ .Tag }}-amd64
+      - mohammadv184/gloader:{{ .Tag }}-arm64
+  - name_template: ghcr.io/mohammadv184/gloader:{{ .Tag }}
+    image_templates:
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-amd64
+      - ghcr.io/mohammadv184/gloader:{{ .Tag }}-arm64
+  - name_template: mohammadv184/gloader:latest
+    image_templates:
+      - mohammadv184/gloader:{{ .Tag }}-amd64
+      - mohammadv184/gloader:{{ .Tag }}-arm64
+
+
+nfpms:
+  - package_name: gloader
+    file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    homepage: https://github.com/mohammadv184/gloader
+    maintainer: Mohammad Abbasi <mohammad.v184@gmail.com>
+    description: gloader is database data migration tool from any source to any destination
+    license: MIT
+    formats:
+      - deb
+      - rpm
+snapcrafts:
+  - name: gloader
+    publish: true
+    summary: gloader is database data migration tool from any source to any destination
+    description: |
+      gloader is database data migration tool from any source to any destination
+    grade: devel
+    confinement: devmode
+    license: MIT
+    base: bare
+    apps:
+        gloader:
+          command: gloader
+          plugs: [ "network"]
+
+
+
+
+
+
+      
+      
+
+
+
+
+
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
