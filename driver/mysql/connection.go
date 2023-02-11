@@ -3,10 +3,11 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
-	"gloader/data"
-	"gloader/driver"
 	"reflect"
 	"regexp"
+
+	"github.com/mohammadv184/gloader/data"
+	"github.com/mohammadv184/gloader/driver"
 )
 
 // Connection is a connection to a MySQL database.

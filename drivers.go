@@ -4,6 +4,6 @@ package gloader
 // and for registration mechanism to work, the driver packages must be imported here.
 // nolint:revive // ignore unused import warning.
 import (
-	_ "gloader/driver/cockroach"
-	_ "gloader/driver/mysql"
+	_ "github.com/mohammadv184/gloader/driver/cockroach"
+	_ "github.com/mohammadv184/gloader/driver/mysql"
 )

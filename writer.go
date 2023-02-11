@@ -2,10 +2,11 @@ package gloader
 
 import (
 	"fmt"
-	"gloader/data"
-	"gloader/driver"
 	"log"
 	"sync"
+
+	"github.com/mohammadv184/gloader/data"
+	"github.com/mohammadv184/gloader/driver"
 )
 
 type Writer struct {

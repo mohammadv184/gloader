@@ -2,7 +2,8 @@ package driver
 
 import (
 	"fmt"
-	"gloader/data"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 // Driver is a driver for a database.

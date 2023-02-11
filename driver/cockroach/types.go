@@ -3,7 +3,8 @@ package cockroach
 import (
 	"errors"
 	"fmt"
-	"gloader/data"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 // ArrayType is a type for array.

@@ -3,9 +3,10 @@ package cockroach
 import (
 	"database/sql"
 	"fmt"
-	"gloader/data"
-	"gloader/driver"
 	"strings"
+
+	"github.com/mohammadv184/gloader/data"
+	"github.com/mohammadv184/gloader/driver"
 
 	"github.com/lib/pq"
 )

@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"gloader/data"
 	"unsafe"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 type StringType struct {

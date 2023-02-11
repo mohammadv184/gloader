@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"gloader/data"
 	"unsafe"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 // ArrayType is a generic array type that can hold any array data type.

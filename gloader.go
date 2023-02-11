@@ -3,10 +3,11 @@ package gloader
 import (
 	"errors"
 	"fmt"
-	"gloader/data"
-	"gloader/driver"
 	"log"
 	"sync"
+
+	"github.com/mohammadv184/gloader/data"
+	"github.com/mohammadv184/gloader/driver"
 )
 
 const (

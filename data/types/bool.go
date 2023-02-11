@@ -2,7 +2,8 @@ package types
 
 import (
 	"fmt"
-	"gloader/data"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 type BoolType struct {

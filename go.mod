@@ -1,4 +1,4 @@
-module gloader
+module github.com/mohammadv184/gloader
 
 go 1.19
 

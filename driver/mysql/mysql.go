@@ -2,8 +2,9 @@ package mysql
 
 import (
 	"database/sql"
-	"gloader/driver"
 	"log"
+
+	"github.com/mohammadv184/gloader/driver"
 
 	// Import the mysql driver.
 	_ "github.com/go-sql-driver/mysql"

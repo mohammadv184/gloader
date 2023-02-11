@@ -2,8 +2,9 @@ package cockroach
 
 import (
 	"database/sql"
-	"gloader/driver"
 	"log"
+
+	"github.com/mohammadv184/gloader/driver"
 
 	// Import the postgres driver.
 	_ "github.com/lib/pq"

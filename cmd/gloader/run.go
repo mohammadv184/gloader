@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	g "gloader"
-	"gloader/driver"
 	"log"
 	"regexp"
+
+	g "github.com/mohammadv184/gloader"
+	"github.com/mohammadv184/gloader/driver"
 
 	"github.com/spf13/cobra"
 )

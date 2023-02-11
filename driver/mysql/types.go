@@ -3,11 +3,12 @@ package mysql
 import (
 	"errors"
 	"fmt"
-	"gloader/data"
 	"reflect"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/mohammadv184/gloader/data"
 )
 
 // CharType is a type for char.
