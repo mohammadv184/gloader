@@ -68,6 +68,7 @@ dockers:
       - "--label=org.opencontainers.image.description=gloader is database data migration tool from any source to any destination"
       - "--label=org.opencontainers.image.source={{ .GitURL }}"
       - "--label=org.opencontainers.image.licenses=MIT"
+      - "--platform=linux/amd64"
   - image_templates:
       - mohammadv184/gloader:{{ .Tag }}-arm64
       - ghcr.io/mohammadv184/gloader:{{ .Tag }}-arm64
@@ -83,6 +84,7 @@ dockers:
       - "--label=org.opencontainers.image.description=gloader is database data migration tool from any source to any destination"
       - "--label=org.opencontainers.image.source={{ .GitURL }}"
       - "--label=org.opencontainers.image.licenses=MIT"
+      - "--platform=linux/arm64"
 docker_manifests:
   - name_template: mohammadv184/gloader:{{ .Tag }}
     image_templates:
