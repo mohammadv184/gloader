@@ -1,8 +1,6 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
 project_name: gloader
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
 builds:
   - env:
@@ -129,16 +127,18 @@ snapcrafts:
           command: gloader
           plugs: [ "network"]
 
-
-
-
-
-
-      
-      
-
-
-
+brews:
+  - tap:
+      owner: mohammadv184
+      name: homebrew-tap
+    homepage: https://github.com/mohammadv184/gloader
+    description: gloader is database data migration tool from any source to any destination
+    license: MIT
+    test: |
+      system "#{bin}/gloader", "version"
+    install: |
+        bin.install "gloader"
+    
 
 
 
