@@ -138,7 +138,16 @@ brews:
       system "#{bin}/gloader", "version"
     install: |
         bin.install "gloader"
-    
+
+publishers:
+  - name: fury
+    ids:
+      - default
+    env:
+      - FURY_TOKEN={{ .Env.FURY_TOKEN }}
+    cmd: ./scripts/fury-release.sh
+
+
 
 
 
