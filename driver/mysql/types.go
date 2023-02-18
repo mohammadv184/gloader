@@ -47,6 +47,77 @@ func (t *CharType) GetValue() any {
 	return t.value
 }
 
+// VarCharType is a type for varchar.
+type VarCharType struct {
+	data.BaseValueType
+	value string
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *VarCharType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = fmt.Sprintf("%s", v)
+	return nil
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *VarCharType) GetTypeKind() data.Kind {
+	return data.KindString
+}
+
+// GetTypeName returns the name of the type.
+func (t *VarCharType) GetTypeName() string {
+	return "VARCHAR"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *VarCharType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *VarCharType) GetValue() any {
+	return t.value
+}
+
+type TextType struct {
+	data.BaseValueType
+	value string
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *TextType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = fmt.Sprintf("%s", v)
+	return nil
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *TextType) GetTypeKind() data.Kind {
+	return data.KindString
+}
+
+// GetTypeName returns the name of the type.
+func (t *TextType) GetTypeName() string {
+	return "TEXT"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *TextType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *TextType) GetValue() any {
+	return t.value
+}
+
 // SmallIntType is a type for smallint.
 type SmallIntType struct {
 	data.BaseValueType
@@ -114,6 +185,147 @@ func (t *SmallIntType) GetTypeSize() uint64 {
 
 // GetValue returns the value stored in the receiver.
 func (t *SmallIntType) GetValue() any {
+	return t.value
+}
+
+type IntType struct {
+	data.BaseValueType
+	value int32
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *IntType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch v.(type) {
+	case int8:
+		t.value = int32(v.(int8))
+		return nil
+	case int16:
+		t.value = int32(v.(int16))
+		return nil
+	case int32:
+		t.value = v.(int32)
+		return nil
+	case int64:
+		t.value = int32(v.(int64))
+		return nil
+	case uint8:
+		t.value = int32(v.(uint8))
+		return nil
+	case uint16:
+		t.value = int32(v.(uint16))
+		return nil
+	case uint32:
+		t.value = int32(v.(uint32))
+		return nil
+	case uint64:
+		t.value = int32(v.(uint64))
+		return nil
+	case []byte:
+		v, err := strconv.ParseInt(string(v.([]byte)), 10, 32)
+		if err != nil {
+			return err
+		}
+		t.value = int32(v)
+		return nil
+
+	default:
+		return fmt.Errorf("%v: expected int32, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *IntType) GetTypeKind() data.Kind {
+	return data.KindInt32
+}
+
+// GetTypeName returns the name of the type.
+func (t *IntType) GetTypeName() string {
+	return "INT"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *IntType) GetTypeSize() uint64 {
+	return 4
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *IntType) GetValue() any {
+	return t.value
+}
+
+type TinyIntType struct {
+	data.BaseValueType
+	value bool
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *TinyIntType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch v.(type) {
+	case bool:
+		t.value = v.(bool)
+		return nil
+	case int8:
+		t.value = v.(int8) != 0
+		return nil
+	case int16:
+		t.value = v.(int16) != 0
+		return nil
+	case int32:
+		t.value = v.(int32) != 0
+		return nil
+	case int64:
+		t.value = v.(int64) != 0
+		return nil
+	case uint8:
+		t.value = v.(uint8) != 0
+		return nil
+	case uint16:
+		t.value = v.(uint16) != 0
+		return nil
+	case uint32:
+		t.value = v.(uint32) != 0
+		return nil
+	case uint64:
+		t.value = v.(uint64) != 0
+		return nil
+	case []byte:
+		v, err := strconv.ParseInt(string(v.([]byte)), 10, 8)
+		if err != nil {
+			return err
+		}
+		t.value = v != 0
+		return nil
+
+	default:
+		return fmt.Errorf("%v: expected bool, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *TinyIntType) GetTypeKind() data.Kind {
+	return data.KindBool
+}
+
+// GetTypeName returns the name of the type.
+func (t *TinyIntType) GetTypeName() string {
+	return "TINYINT"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *TinyIntType) GetTypeSize() uint64 {
+	return 1
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *TinyIntType) GetValue() any {
 	return t.value
 }
 
@@ -186,6 +398,80 @@ func (t *BigIntType) GetValue() any {
 	return t.value
 }
 
+type DecimalType struct {
+	data.BaseValueType
+	value float64
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *DecimalType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch v.(type) {
+	case int8:
+		t.value = float64(v.(int8))
+		return nil
+	case int16:
+		t.value = float64(v.(int16))
+		return nil
+	case int32:
+		t.value = float64(v.(int32))
+		return nil
+	case int64:
+		t.value = float64(v.(int64))
+		return nil
+	case uint8:
+		t.value = float64(v.(uint8))
+		return nil
+	case uint16:
+		t.value = float64(v.(uint16))
+		return nil
+	case uint32:
+		t.value = float64(v.(uint32))
+		return nil
+	case uint64:
+		t.value = float64(v.(uint64))
+		return nil
+	case float32:
+		t.value = float64(v.(float32))
+		return nil
+	case float64:
+		t.value = v.(float64)
+		return nil
+	case []byte:
+		v, err := strconv.ParseFloat(string(v.([]byte)), 64)
+		if err != nil {
+			return err
+		}
+		t.value = v
+		return nil
+	default:
+		return fmt.Errorf("%v: expected float64, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *DecimalType) GetTypeKind() data.Kind {
+	return data.KindFloat64
+}
+
+// GetTypeName returns the name of the type.
+func (t *DecimalType) GetTypeName() string {
+	return "DECIMAL"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *DecimalType) GetTypeSize() uint64 {
+	return 8
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *DecimalType) GetValue() any {
+	return t.value
+}
+
 // LongBlobType is a type for longblob.
 type LongBlobType struct {
 	data.BaseValueType
@@ -219,6 +505,76 @@ func (t *LongBlobType) GetTypeSize() uint64 {
 
 // GetValue returns the value stored in the receiver.
 func (t *LongBlobType) GetValue() any {
+	return t.value
+}
+
+type MediumBlobType struct {
+	data.BaseValueType
+	value []byte
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *MediumBlobType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = []byte(fmt.Sprintf("%s", v))
+	return nil
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *MediumBlobType) GetTypeKind() data.Kind {
+	return data.KindBytes
+}
+
+// GetTypeName returns the name of the type.
+func (t *MediumBlobType) GetTypeName() string {
+	return "MEDIUMBLOB"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *MediumBlobType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *MediumBlobType) GetValue() any {
+	return t.value
+}
+
+type EnumType struct {
+	data.BaseValueType
+	value string
+}
+
+// Parse parses the value and stores it in the receiver.
+func (t *EnumType) Parse(v any) error {
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	t.value = fmt.Sprintf("%s", v)
+	return nil
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *EnumType) GetTypeKind() data.Kind {
+	return data.KindString
+}
+
+// GetTypeName returns the name of the type.
+func (t *EnumType) GetTypeName() string {
+	return "ENUM"
+}
+
+// GetTypeSize returns the size of the value in bytes.
+func (t *EnumType) GetTypeSize() uint64 {
+	return uint64(len(t.value))
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *EnumType) GetValue() any {
 	return t.value
 }
 
@@ -284,6 +640,21 @@ func GetTypeFromName(name string) (data.Type, error) {
 		return &LongBlobType{}, nil
 	case mustMatchString("(?i)datetime", name):
 		return &DateTimeType{}, nil
+	case mustMatchString("(?i)enum", name):
+		return &EnumType{}, nil
+	case mustMatchString("(?i)mediumblob", name):
+		return &MediumBlobType{}, nil
+	case mustMatchString("(?i)decimal", name):
+		return &DecimalType{}, nil
+	case mustMatchString("(?i)int", name):
+		return &IntType{}, nil
+	case mustMatchString("(?i)varchar", name):
+		return &VarCharType{}, nil
+	case mustMatchString("(?i)text", name):
+		return &TextType{}, nil
+	case mustMatchString("(?i)tinyint", name):
+		return &TinyIntType{}, nil
+
 	default:
 		return nil, fmt.Errorf("%v: %s", ErrTypeNotFound, name)
 	}
