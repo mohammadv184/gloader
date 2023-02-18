@@ -146,7 +146,7 @@ publishers:
       - pkgs
     env:
       - FURY_TOKEN={{ .Env.FURY_TOKEN }}
-    cmd: ./scripts/fury-release.sh
+    cmd: ./scripts/fury-release.sh {{ .ArtifactName }}
 
 
 
