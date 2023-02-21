@@ -122,6 +122,35 @@ func (d *Set) GetKeys() []string {
 	return keys
 }
 
+// GetValues returns the values of the data set.
+func (d *Set) GetValues() []ValueType {
+	values := make([]ValueType, len(*d))
+	for i, data := range *d {
+		values[i] = data.GetValue()
+	}
+	return values
+}
+
+// GetStringValues returns the string values of the data set.
+func (d *Set) GetStringValues() []string {
+	values := make([]string, len(*d))
+	for i, data := range *d {
+		switch data.GetValue().GetTypeKind() {
+		case KindInt, KindInt8, KindInt16, KindInt32, KindInt64,
+			KindUint, KindUint8, KindUint16, KindUint32, KindUint64,
+			KindFloat32, KindFloat64:
+			values[i] = fmt.Sprintf("%v", data.GetValue().GetValue())
+		case KindBool:
+			values[i] = fmt.Sprintf("%t", data.GetValue().GetValue())
+		case KindDateTime:
+			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05"))
+		default:
+			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue())
+		}
+	}
+	return values
+}
+
 // Clone returns a clone of the data set.
 func (d *Set) Clone() *Set {
 	clone := NewDataSet()

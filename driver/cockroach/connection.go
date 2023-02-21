@@ -3,7 +3,6 @@ package cockroach
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/mohammadv184/gloader/data"
 	"github.com/mohammadv184/gloader/driver"
@@ -90,7 +89,7 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 
 	for _, dataSet := range *dataBatch {
 		values := make([]interface{}, dataSet.GetLength())
-		for i, key := range strings.Split(dataSet.String(", "), ", ") {
+		for i, key := range dataSet.GetStringValues() {
 			values[i] = key
 		}
 		_, err = stmt.Exec(values...)
