@@ -12,7 +12,7 @@ import (
 
 const (
 	DefaultRowsPerBatch = 100
-	DefaultWorkers      = 5
+	DefaultWorkers      = 3
 )
 
 var (
@@ -110,7 +110,6 @@ func (g *GLoader) Start() error {
 	}
 
 	wg := sync.WaitGroup{}
-
 	for _, dc := range sDetails.DataCollections {
 		wg.Add(2)
 		fmt.Println("Starting to load", dc.Name, "from", 0, "to", dc.DataSetCount)

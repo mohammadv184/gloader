@@ -102,7 +102,7 @@ func (r *Reader) Start() error {
 					}
 				}
 			retryRead:
-				batch, err := sConn.Read(r.dataCollection, startOffset, endOffset)
+				batch, err := sConn.Read(r.dataCollection, i, i+rowPerBatch)
 				if err != nil {
 					log.Println(err)
 					goto retryRead

@@ -595,11 +595,11 @@ func (t *DateTimeType) Parse(v any) error {
 		t.value = v.(time.Time)
 		return nil
 	case []byte:
-		v, err := time.Parse("2006-01-02 15:04:05", string(v.([]byte)))
+		tm, err := time.Parse("2006-01-02 15:04:05.999999999", string(v.([]byte)))
 		if err != nil {
 			return err
 		}
-		t.value = v
+		t.value = tm
 		return nil
 	default:
 		return fmt.Errorf("%v: expected time.Time, got %T", data.ErrInvalidValue, v)

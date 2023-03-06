@@ -143,7 +143,7 @@ func (d *Set) GetStringValues() []string {
 		case KindBool:
 			values[i] = fmt.Sprintf("%t", data.GetValue().GetValue())
 		case KindDateTime:
-			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05"))
+			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05.999999999"))
 		default:
 			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue())
 		}
