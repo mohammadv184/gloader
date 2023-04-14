@@ -10,8 +10,10 @@ import (
 type Driver interface {
 	// GetDriverName returns the name of the driver.
 	GetDriverName() string
+	IsWritable() bool
+	IsReadable() bool
 	// Open opens a connection to the database.
-	Open(dsn string) (Connection, error)
+	Open(ctx context.Context, dsn string) (Connection, error)
 }
 
 // Connection is a connection to a database.

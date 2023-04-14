@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -25,8 +26,16 @@ func (m *MySQL) GetDriverName() string {
 	return "mysql"
 }
 
+func (m *MySQL) IsReadable() bool {
+	return true
+}
+
+func (m *MySQL) IsWritable() bool {
+	return false
+}
+
 // Open opens a connection to the database.
-func (m *MySQL) Open(name string) (driver.Connection, error) {
+func (m *MySQL) Open(_ context.Context, name string) (driver.Connection, error) {
 	config, err := parseConfig(name)
 	if err != nil {
 		return nil, err

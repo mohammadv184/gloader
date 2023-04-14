@@ -1,6 +1,7 @@
 package cockroach
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -21,12 +22,19 @@ func init() {
 }
 
 // GetDriverName returns the name of the driver.
-func (m *Cockroach) GetDriverName() string {
+func (*Cockroach) GetDriverName() string {
 	return "cockroach"
 }
 
+func (*Cockroach) IsReadable() bool {
+	return false
+}
+func (*Cockroach) IsWritable() bool {
+	return true
+}
+
 // Open opens a connection to the database.
-func (m *Cockroach) Open(dsn string) (driver.Connection, error) {
+func (*Cockroach) Open(_ context.Context, dsn string) (driver.Connection, error) {
 	config, err := parseConfig(dsn)
 	if err != nil {
 		return nil, err
