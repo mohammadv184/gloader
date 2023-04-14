@@ -47,35 +47,47 @@ type DataBaseDetails struct {
 
 // DataCollectionDetails is the details of a data collection.
 type DataCollectionDetails struct {
-	Name         string
 	DataMap      data.Map
+	Name         string
 	DataSetCount int
 }
 
 // Connector is a connector to a database.
 type Connector struct {
+	driver Driver
+	dsn    string
 	DefaultSortBuilder
 	DefaultFilterBuilder
-	dsn    string
-	driver Driver
 }
 
 // Connect connects to the database.
-func (c *Connector) Connect() (Connection, error) {
-	conn, err := c.driver.Open(c.dsn)
+func (c *Connector) Connect(ctx context.Context) (Connection, error) {
+	conn, err := c.driver.Open(ctx, c.dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	if fConn, ok := conn.(FilterableConnection); ok {
-		for _, filter := range c.GetFilters() {
-			fConn.(FilterableConnection).WhereCondition(filter.GetCondition(), filter.GetKey(), filter.GetValue())
+		for dc, filters := range c.GetAllFilters() {
+			for _, filter := range filters {
+				fConn.(FilterableConnection).WhereCondition(dc, filter.GetCondition(), filter.GetKey(), filter.GetValue())
+			}
+		}
+
+		for _, filter := range c.GetRootFilters() {
+			fConn.(FilterableConnection).WhereRootCondition(filter.GetCondition(), filter.GetKey(), filter.GetValue())
 		}
 	}
 
 	if sConn, ok := conn.(SortableConnection); ok {
-		for _, sort := range c.GetSorts() {
-			sConn.(SortableConnection).OrderBy(sort.GetKey(), sort.GetDirection())
+		for dc, sorts := range c.GetAllSorts() {
+			for _, sort := range sorts {
+				sConn.(SortableConnection).OrderBy(dc, sort.GetKey(), sort.GetDirection())
+			}
+		}
+
+		for _, sort := range c.GetRootSorts() {
+			sConn.(SortableConnection).OrderByRoot(sort.GetKey(), sort.GetDirection())
 		}
 	}
 	return conn, nil
@@ -83,22 +95,12 @@ func (c *Connector) Connect() (Connection, error) {
 
 // IsWritable returns true if the connection is writable.
 func (c *Connector) IsWritable() bool {
-	conn, err := c.Connect()
-	if err != nil {
-		panic(err)
-	}
-	_, ok := conn.(WritableConnection)
-	return ok
+	return c.driver.IsWritable()
 }
 
 // IsReadable returns true if the connection is readable.
 func (c *Connector) IsReadable() bool {
-	conn, err := c.Connect()
-	if err != nil {
-		panic(err)
-	}
-	_, ok := conn.(ReadableConnection)
-	return ok
+	return c.driver.IsReadable()
 }
 
 // GetDriver returns the driver.
@@ -121,8 +123,8 @@ type ConnectionPool struct {
 }
 
 // Connect connects to the database.
-func (cp *ConnectionPool) Connect() (Connection, uint, error) {
-	conn, err := cp.connector.Connect()
+func (cp *ConnectionPool) Connect(ctx context.Context) (Connection, uint, error) {
+	conn, err := cp.connector.Connect(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -139,10 +141,14 @@ func (cp *ConnectionPool) GetConnection(index uint) (Connection, error) {
 	return cp.connections[index], nil
 }
 
-// Close closes all connections in the pool.
-func (cp *ConnectionPool) Close() error {
-	for _, conn := range cp.connections {
-		if err := conn.Close(); err != nil {
+// CloseAll closes all connections in the pool.
+func (cp *ConnectionPool) CloseAll() error {
+	for i, c := range cp.connections {
+		if c == nil {
+			continue
+		}
+
+		if err := cp.CloseConnection(uint(i)); err != nil {
 			return err
 		}
 	}
@@ -155,15 +161,15 @@ func (cp *ConnectionPool) CloseConnection(index uint) error {
 	if err != nil {
 		return err
 	}
+	if conn == nil {
+		return nil
+	}
 	err = conn.Close()
 	if err != nil {
 		return err
 	}
-	if index == cp.GetConnectionLength()-1 {
-		cp.connections = cp.connections[:index]
-	} else {
-		cp.connections = append(cp.connections[:index], cp.connections[index+1:]...)
-	}
+
+	cp.connections[index] = nil
 	return nil
 }
 
@@ -177,8 +183,8 @@ func (cp *ConnectionPool) GetConnections() []Connection {
 	return cp.connections
 }
 
-// GetConnectionLength returns the length of the connections.
-func (cp *ConnectionPool) GetConnectionLength() uint {
+// GetConnectionsLength returns the length of the connections.
+func (cp *ConnectionPool) GetConnectionsLength() uint {
 	return uint(len(cp.connections))
 }
 
