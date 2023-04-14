@@ -1,7 +1,8 @@
 package gloader
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"log"
 	"sync"
 
@@ -15,15 +16,17 @@ type Writer struct {
 	dataCollection string
 	workers        uint
 	rowPerBatch    uint64
+	ctx            context.Context
 }
 
-func NewWriter(dataCollection string, buffer *data.Buffer, connectionP *driver.ConnectionPool) *Writer {
+func NewWriter(ctx context.Context, dataCollection string, buffer *data.Buffer, connectionP *driver.ConnectionPool) *Writer {
 	return &Writer{
 		buffer:         buffer,
 		connectionP:    connectionP,
 		dataCollection: dataCollection,
 		workers:        DefaultWorkers,
 		rowPerBatch:    DefaultRowsPerBatch,
+		ctx:            ctx,
 	}
 }
 
@@ -43,53 +46,60 @@ func (w *Writer) Start() error {
 		return ErrConnectionPoolNotSet
 	}
 
-	wg := sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 	wg.Add(int(w.workers))
+
 	for i := uint(0); i < w.workers; i++ {
-		c, _, err := w.connectionP.Connect()
-		if err != nil {
-			return err
-		}
-
-		conn := c.(driver.WritableConnection)
-
-		go func(c driver.WritableConnection) {
+		go func() {
 			defer wg.Done()
-			defer c.Close()
-			for {
-				batch := data.NewDataBatch()
-
-				for i := uint64(0); i < w.rowPerBatch; i++ {
-					dSet, err := w.buffer.Read()
-					if err != nil {
-						log.Println(err)
-						return
-					}
-					if dSet == nil {
-						if batch.GetLength() > 0 {
-							fmt.Println("write")
-							if err := c.Write(w.dataCollection, batch); err != nil {
-								log.Println(err)
-							}
-						}
-
-						return
-					}
-					// fmt.Println("Length: ", w.dataCollection, batch.GetLength())
-					batch.Add(dSet)
-				}
-				rt := 10 // retry times
-				for i := 0; i < rt; i++ {
-					if err := c.Write(w.dataCollection, batch); err != nil {
-						log.Println(err)
-						continue
-					}
-					break
-				}
-
-			}
-		}(conn)
+			w.RunWorker()
+		}()
 	}
+
 	wg.Wait()
 	return nil
+}
+
+func (w *Writer) RunWorker() {
+	conn, cIndex, err := w.connectionP.Connect(w.ctx)
+	if err != nil {
+		panic(err)
+	}
+	wConn := conn.(driver.WritableConnection)
+
+	batch := data.NewDataBatch()
+	for {
+		batch.Clear()
+
+		for i := uint64(0); i < w.rowPerBatch; i++ {
+			dSet, err := w.buffer.Read()
+			if err != nil {
+				if errors.Is(err, data.ErrBufferIsClosed) {
+					batch.Add(dSet)
+					break
+				}
+				log.Println(err)
+				return
+			}
+
+			// fmt.Println("Length: ", w.dataCollection, batch.GetLength())
+			batch.Add(dSet)
+		}
+
+		if batch.GetLength() > 0 {
+			if err := wConn.Write(w.ctx, w.dataCollection, batch); err != nil {
+				log.Printf("error on writing data to %s: %s", w.dataCollection, err)
+				panic(err)
+			}
+		}
+
+		if w.buffer.IsClosed() && w.buffer.IsEmpty() {
+			log.Printf("%s Writer worker is closed", w.dataCollection)
+			err := w.connectionP.CloseConnection(cIndex)
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		}
+	}
 }
