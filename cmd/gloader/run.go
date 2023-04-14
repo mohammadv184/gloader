@@ -23,9 +23,16 @@ var runCmd = &cobra.Command{
 		destination := args[1]
 		fmt.Println("Migrating data from", source, "to", destination, "...")
 
-		filter, _ := cmd.Flags().GetString("filter")
-		sort, _ := cmd.Flags().GetString("sort")
-		sortReverse, _ := cmd.Flags().GetString("sort-reverse")
+		filters, _ := cmd.Flags().GetStringToString("filter")
+		filtersAll, _ := cmd.Flags().GetString("filter-all")
+		sorts, _ := cmd.Flags().GetStringToString("sort")
+		sortsAll, _ := cmd.Flags().GetString("sort-all")
+		reverseSorts, _ := cmd.Flags().GetStringToString("sort-reverse")
+		reverseSortsAll, _ := cmd.Flags().GetString("sort-reverse-all")
+		includes, _ := cmd.Flags().GetStringSlice("table")
+		excludes, _ := cmd.Flags().GetStringSlice("exclude")
+		startOffsets, _ := cmd.Flags().GetStringToInt64("start-offset")
+		endOffsets, _ := cmd.Flags().GetStringToInt64("end-offset")
 		rowsPerBatch, _ := cmd.Flags().GetUint64("rows-per-batch")
 		workers, _ := cmd.Flags().GetUint("workers")
 
@@ -44,22 +51,57 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if filter != "" {
+		if filters != nil {
+			for dc, filter := range filters {
+				r := regexp.MustCompile(`^([^<>=]+)([<>=]+)(.*)$`)
+				filterKey := r.FindStringSubmatch(filter)[1]
+				filterOperator := r.FindStringSubmatch(filter)[2]
+				filterValue := r.FindStringSubmatch(filter)[3]
+				filterC := driver.GetConditionFromString(filterOperator)
+				gloader.Filter(dc, filterKey, filterC, filterValue)
+			}
+		}
+		if filtersAll != "" {
 			r := regexp.MustCompile(`^([^<>=]+)([<>=]+)(.*)$`)
-			filterKey := r.FindStringSubmatch(filter)[1]
-			filterOperator := r.FindStringSubmatch(filter)[2]
-			filterValue := r.FindStringSubmatch(filter)[3]
+			filterKey := r.FindStringSubmatch(filtersAll)[1]
+			filterOperator := r.FindStringSubmatch(filtersAll)[2]
+			filterValue := r.FindStringSubmatch(filtersAll)[3]
 			filterC := driver.GetConditionFromString(filterOperator)
-			gloader.Filter(filterKey, filterC, filterValue)
+			gloader.FilterAll(filterKey, filterC, filterValue)
 		}
 
-		if sort != "" {
-			gloader.OrderBy(sort, driver.Asc)
+		if sorts != nil {
+			for dc, sort := range sorts {
+				gloader.OrderBy(dc, sort, driver.Asc)
+			}
 		}
-		if sortReverse != "" {
-			gloader.OrderBy(sortReverse, driver.Desc)
+		if sortsAll != "" {
+			gloader.OrderByAll(sortsAll, driver.Asc)
 		}
-
+		if reverseSorts != nil {
+			for dc, sort := range reverseSorts {
+				gloader.OrderBy(dc, sort, driver.Desc)
+			}
+		}
+		if reverseSortsAll != "" {
+			gloader.OrderByAll(reverseSortsAll, driver.Desc)
+		}
+		if includes != nil {
+			gloader.Include(includes...)
+		}
+		if excludes != nil {
+			gloader.Exclude(excludes...)
+		}
+		if startOffsets != nil {
+			for dc, offset := range startOffsets {
+				gloader.SetStartOffset(dc, uint64(offset))
+			}
+		}
+		if endOffsets != nil {
+			for dc, offset := range endOffsets {
+				gloader.SetEndOffset(dc, uint64(offset))
+			}
+		}
 		if rowsPerBatch != 0 {
 			gloader.SetRowsPerBatch(rowsPerBatch)
 		}
@@ -77,9 +119,16 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().StringP("filter", "f", "", "filter data to migrate")
-	runCmd.Flags().StringP("sort", "s", "", "sort data to migrate in ascending order")
-	runCmd.Flags().StringP("sort-reverse", "S", "", "sort data to migrate in descending order")
+	runCmd.Flags().StringToStringP("filter", "f", nil, "filter data to migrate")
+	runCmd.Flags().String("filter-all", "", "filter data to migrate (all tables)")
+	runCmd.Flags().StringToStringP("sort", "s", nil, "sort data to migrate in ascending order")
+	runCmd.Flags().String("sort-all", "", "sort data to migrate in ascending order (all tables)")
+	runCmd.Flags().StringToStringP("sort-reverse", "S", nil, "sort data to migrate in descending order")
+	runCmd.Flags().String("sort-reverse-all", "", "sort data to migrate in descending order (all tables)")
+	runCmd.Flags().StringSliceP("table", "t", nil, "migrate only these tables")
+	runCmd.Flags().StringSliceP("exclude", "e", nil, "exclude tables from migration")
+	runCmd.Flags().StringToInt64("start-offset", nil, "start offset for each table")
+	runCmd.Flags().StringToInt64("end-offset", nil, "end offset for each table")
 	runCmd.Flags().Uint64P("rows-per-batch", "r", g.DefaultRowsPerBatch, "number of rows per batch")
 	runCmd.Flags().UintP("workers", "w", g.DefaultWorkers, "number of workers")
 }
