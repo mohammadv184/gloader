@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -12,10 +13,10 @@ import (
 
 // Connection is a connection to a MySQL database.
 type Connection struct {
-	driver.DefaultFilterBuilder
-	driver.DefaultSortBuilder
 	conn   *sql.DB
 	config *Config
+	driver.DefaultFilterBuilder
+	driver.DefaultSortBuilder
 }
 
 // Close closes the connection to the database.
@@ -24,7 +25,7 @@ func (m *Connection) Close() error {
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
+func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, error) {
 	databaseInfo := &driver.DataBaseDetails{
 		Name:            m.config.Database,
 		DataCollections: make([]driver.DataCollectionDetails, 0),
@@ -74,7 +75,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
 		}
 
-		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL()))
+		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL(table.Name)))
 		if err != nil {
 			return nil, err
 		}
@@ -94,11 +95,12 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 }
 
 // Read reads data from the database.
-func (m *Connection) Read(dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
+func (m *Connection) Read(_ context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
 	fmt.Println("Reading from", startOffset, "to", endOffset)
 
 	batch := data.NewDataBatch()
-	rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL() + m.BuildSortSQL() + " LIMIT " + fmt.Sprint(startOffset) + ", " + fmt.Sprint(endOffset-startOffset))
+
+	rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL(dataCollection) + m.BuildSortSQL(dataCollection) + " LIMIT " + fmt.Sprint(startOffset) + ", " + fmt.Sprint(endOffset-startOffset))
 	if err != nil {
 		return nil, err
 	}

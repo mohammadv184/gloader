@@ -1,6 +1,7 @@
 package cockroach
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -23,7 +24,7 @@ func (m *Connection) Close() error {
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
+func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, error) {
 	databaseInfo := driver.DataBaseDetails{
 		Name:            m.dbName,
 		DataCollections: make([]driver.DataCollectionDetails, 0),
@@ -73,7 +74,7 @@ func (m *Connection) GetDetails() (*driver.DataBaseDetails, error) {
 }
 
 // Write writes a batch of data to the database.
-func (m *Connection) Write(table string, dataBatch *data.Batch) error {
+func (m *Connection) Write(_ context.Context, table string, dataBatch *data.Batch) error {
 	tx, err := m.conn.Begin()
 	if err != nil {
 		return err
@@ -92,6 +93,7 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 		for i, key := range dataSet.GetStringValues() {
 			values[i] = key
 		}
+
 		_, err = stmt.Exec(values...)
 		if err != nil {
 			return err
@@ -104,6 +106,7 @@ func (m *Connection) Write(table string, dataBatch *data.Batch) error {
 			if err.Code == "23505" { // 23505 is the unique_violation error code
 				fmt.Println("Unique violation detected: ", err.Detail, table)
 			}
+			fmt.Println("Error executing statement: ", err.Code, err.Message, err.Detail, table)
 		}
 		fmt.Println("Error executing statement")
 		return err

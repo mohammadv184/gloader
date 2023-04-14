@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mohammadv184/gloader/data"
@@ -21,21 +22,21 @@ type Connection interface {
 	// Close closes the connection.
 	Close() error
 	// GetDetails returns the details of the database.
-	GetDetails() (*DataBaseDetails, error)
+	GetDetails(ctx context.Context) (*DataBaseDetails, error)
 }
 
 // WritableConnection is a connection to a database that can write data.
 type WritableConnection interface {
 	Connection // Embeds Connection
 	// Write writes a batch of data to the database.
-	Write(dataCollection string, dataBatch *data.Batch) error
+	Write(ctx context.Context, dataCollection string, dataBatch *data.Batch) error
 }
 
 // ReadableConnection is a connection to a database that can read data.
 type ReadableConnection interface {
 	Connection // Embeds Connection
 	// Read reads a batch of data from the database.
-	Read(dataCollection string, startOffset, endOffset uint64) (*data.Batch, error)
+	Read(ctx context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error)
 }
 
 // DataBaseDetails is the details of a data batch.
