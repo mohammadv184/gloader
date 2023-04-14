@@ -41,8 +41,9 @@ jobs:
       - name: snapcraft-login
         if: startsWith(github.ref, 'refs/tags/v')
         run: snapcraft login --with <(echo "${{ secrets.SNAPCRAFT_LOGIN }}")
-      - name: sort-structs # sorting structs is a best-practice to improve memory usage and performance by reducing the padding between fields
-        run: go run github.com/dkorunic/betteralign/cmd/betteralign@latest -apply ./...
+#      it's commented due to the bug in betteralig -apply. ref: https://github.com/dkorunic/betteralign/issues/4
+#      - name: sort-structs # sorting structs is a best-practice to improve memory usage and performance by reducing the padding between fields
+#        run: go run github.com/dkorunic/betteralign/cmd/betteralign@latest -apply ./...
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
