@@ -1,8 +1,9 @@
 package data
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -19,17 +20,19 @@ type Buffer struct {
 
 	locker *sync.RWMutex
 
+	close chan any
+
+	ctx context.Context
+
 	maxSize uint64
 
 	maxLength uint64
-
-	close chan any
 }
 
 // NewBuffer creates a new buffer with the given maximum size in bytes.
 // If no size is given, the DefaultMaxBufferLength is used.
 // size: the maximum size of the buffer in bytes. and cannot be 0.
-func NewBuffer(size ...uint64) *Buffer {
+func NewBuffer(ctx context.Context, size ...uint64) *Buffer {
 	var bSize uint64 = DefaultMaxBufferSize
 	if len(size) > 0 && size[0] > 0 {
 		bSize = size[0]
@@ -39,6 +42,7 @@ func NewBuffer(size ...uint64) *Buffer {
 		data:      NewDataBatch(),
 		maxSize:   bSize,
 		close:     make(chan any),
+		ctx:       ctx,
 		locker:    &sync.RWMutex{},
 		maxLength: DefaultMaxBufferLength,
 	}
@@ -48,10 +52,10 @@ func NewBuffer(size ...uint64) *Buffer {
 // if the buffer exceeds the maximum conditions, it will be blocked until the buffer conditions are met.
 // if the buffer is closed, it will return an error.
 func (b *Buffer) Write(data ...*Set) error {
+	b.checkConditions()
 	if b.IsClosed() {
 		return ErrBufferIsClosed
 	}
-	b.checkMaxSize()
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	b.data.Add(data...)
@@ -59,15 +63,12 @@ func (b *Buffer) Write(data ...*Set) error {
 }
 
 // Read pops the first data set from the buffer. If the buffer is empty, it will be blocked until the next data set is written to the buffer.
-// If the buffer is closed, and all data sets have been read, it will return nil.
+// If the buffer is closed, and all data sets have been read, it will return ErrBufferIsClosed.
 func (b *Buffer) Read() (*Set, error) {
 	for {
 		data, err := b.popDataSet()
 
 		if data != nil || err != nil {
-			if errors.Is(err, ErrBufferIsClosed) {
-				return nil, nil
-			}
 			return data, err
 		}
 	}
@@ -182,4 +183,20 @@ func (b *Buffer) checkMaxSize() {
 			return
 		}
 	}
+}
+
+func (b *Buffer) checkContext() {
+	select {
+	case <-b.ctx.Done():
+		err := b.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	default:
+	}
+}
+
+func (b *Buffer) checkConditions() {
+	b.checkContext()
+	b.checkMaxSize()
 }
