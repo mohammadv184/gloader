@@ -7,6 +7,7 @@ require (
 	github.com/lib/pq v1.10.7
 	github.com/spf13/cobra v1.6.1
 )
+
 // it is a fork of github.com/lib/pq to fix the issue of the twice escaping
 // ref: https://github.com/lib/pq/issues/1118
 replace github.com/lib/pq v1.10.7 => github.com/mohammadv184/pq v0.0.0-20230415190308-7e005fd07340
