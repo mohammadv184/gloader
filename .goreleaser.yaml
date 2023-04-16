@@ -26,6 +26,10 @@ builds:
     main: ./cmd/gloader
     binary: gloader
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+    hooks:
+      pre:
+        - go mod download
+        - go mod vendor
 release:
   github:
     owner: mohammadv184
