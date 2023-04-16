@@ -10,7 +10,7 @@ require (
 
 // it is a fork of github.com/lib/pq to fix the issue of the twice escaping
 // ref: https://github.com/lib/pq/issues/1118
-replace github.com/lib/pq v1.10.7 => github.com/mohammadv184/pq v0.0.0-20230415190308-7e005fd07340
+replace github.com/lib/pq => github.com/mohammadv184/pq v0.0.0-20230415190308-7e005fd07340
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
