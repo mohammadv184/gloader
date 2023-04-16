@@ -58,4 +58,6 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: release-artifacts
-          path: .
+          path: |
+            . 
+            !./dist
