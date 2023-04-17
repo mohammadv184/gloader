@@ -142,6 +142,7 @@ func (fb *DefaultFilterBuilder) ResetFilters(dataCollection string) {
 	fb.initFiltersIfIsNil() // allocate memory for the filters map if it is nil, for preventing panic.
 	fb.filters[dataCollection] = []*Filter{}
 }
+
 func (fb *DefaultFilterBuilder) ResetRootFilters() {
 	fb.rootFilters = []*Filter{}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/mohammadv184/gloader/driver"
 
 	// Import the postgres driver.
-	_ "github.com/lib/pq"
+	_ "github.com/mohammadv184/pq"
 )
 
 // Cockroach is a driver for CockroachDB.
@@ -29,6 +29,7 @@ func (*Cockroach) GetDriverName() string {
 func (*Cockroach) IsReadable() bool {
 	return false
 }
+
 func (*Cockroach) IsWritable() bool {
 	return true
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/mohammadv184/gloader/data"
 	"github.com/mohammadv184/gloader/driver"
 
-	"github.com/lib/pq"
+	"github.com/mohammadv184/pq"
 )
 
 // Connection is a connection to a CockroachDB database.

@@ -99,6 +99,7 @@ func (g *GLoader) OrderBy(dataCollection, key string, direction driver.Direction
 	g.srcConnector.OrderBy(dataCollection, key, direction)
 	return g
 }
+
 func (g *GLoader) FilterAll(key string, condition driver.Condition, value string) *GLoader {
 	if g.srcConnector == nil {
 		panic(ErrSrcConnectionIsRequired)
@@ -124,10 +125,12 @@ func (g *GLoader) Exclude(dataCollections ...string) *GLoader {
 	g.excludedDataCollections = dataCollections
 	return g
 }
+
 func (g *GLoader) SetEndOffset(dataCollection string, offset uint64) *GLoader {
 	g.dataCollectionEndOffset[dataCollection] = offset
 	return g
 }
+
 func (g *GLoader) SetStartOffset(dataCollection string, offset uint64) *GLoader {
 	g.dataCollectionStartOffset[dataCollection] = offset
 	return g
@@ -248,7 +251,6 @@ func (g *GLoader) StartWithContext(ctx context.Context) error {
 	}
 	wg.Wait()
 	return nil
-
 }
 
 func (g *GLoader) Stop() {
