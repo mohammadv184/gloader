@@ -5,8 +5,17 @@ package data
 import "unsafe"
 
 // Data is a key-value pair. The key is a string and the value is a Type.
-// The value can be any type that implements the Type interface.
-// Data is the smallest unit of data in gloader.
+// The value can be any type that implements the ValueType interface.
+// Data is the smallest unit of data in gloader:
+// Data < Set < Batch
+// Data: {key, value}
+// Set: [{key, value}, {key, value}, {key, value}, ...]
+// Batch:
+// [
+// [{key, value}, {key, value}, {key, value}, ...],
+// [{key, value}, {key, value}, {key, value}, ...],
+// [{key, value}, {key, value}, {key, value}, ...],
+// ...].
 type Data struct {
 	Key   string
 	Value ValueType
@@ -37,9 +46,9 @@ func (d *Data) Clone() *Data {
 	return NewData(d.Key, d.Value.Clone())
 }
 
-// GetSize returns the size of the data in bytes.
+// GetSize returns approximate memory usage of the data in bytes.
 func (d *Data) GetSize() uint64 {
-	return d.Value.GetTypeSize() + uint64(unsafe.Sizeof(d.Key))
+	return d.Value.GetValueSize() + uint64(unsafe.Sizeof(d.Key))
 }
 
 // NewData creates a new data with the given key and value.

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"unsafe"
 )
 
 // Type is the interface that has the basic data type methods.
@@ -16,20 +15,24 @@ type Type interface {
 	GetTypeName() string
 	// GetTypeKind returns the kind of the type.
 	GetTypeKind() Kind
+	// GetTypeSize returns the size of the type in bytes.
+	GetTypeSize() uint64
 }
 
 // ValueType is Type that holds a value.
-// It is provided Parse, GetTypeSize, GetValue, To, AssignTo, Clone methods. for handling values.
+// It is provided Parse, GetValueSize, GetValue, To, AssignTo, Clone methods. for handling values.
 type ValueType interface {
 	Type // Type interface
 	// Parse parses the value and stores it in the receiver.
+	// It can parse any type that is compatible with the type kind.
 	Parse(v any) error
-	// GetTypeSize returns the size of the value in bytes.
-	GetTypeSize() uint64
+	// GetValueSize returns the size of the value in bytes.
+	GetValueSize() uint64
 	// GetValue returns the value stored in the receiver.
+	// returned value kind is the same as the type kind which is accessible by GetTypeKind method.
 	GetValue() any
-	// To converts the value to the given type.
-	To(t ValueType) (ValueType, error)
+	// To convert the value to the given type.
+	To(t Type) (ValueType, error)
 	// AssignTo assigns the value to the given destination.
 	AssignTo(t any) error
 	// Clone returns a copy of the receiver.
@@ -58,9 +61,14 @@ func (b *BaseValueType) GetTypeName() string {
 	return reflect.TypeOf(b).String()
 }
 
-// GetTypeSize returns the size of the value in bytes.
+// GetTypeSize returns the size of the type in bytes.
 func (b *BaseValueType) GetTypeSize() uint64 {
-	return uint64(unsafe.Sizeof(b))
+	return uint64(GetBaseKindSize(b.GetTypeKind()))
+}
+
+// GetValueSize returns the size of the value in bytes.
+func (b *BaseValueType) GetValueSize() uint64 {
+	return b.GetTypeSize()
 }
 
 // GetValue returns the value stored in the receiver.
@@ -75,19 +83,20 @@ func (b *BaseValueType) Clone() ValueType {
 	return valueType
 }
 
-// To converts the value to the given type.
-func (b *BaseValueType) To(t ValueType) (ValueType, error) {
+// To convert the value to the given type.
+func (b *BaseValueType) To(t Type) (ValueType, error) {
 	if b.GetTypeKind() != t.GetTypeKind() {
 		return nil, ErrDataTypeKindNotMatch
 	}
-	if b.GetTypeName() == t.GetTypeName() {
-		return t, nil
-	}
-	err := t.Parse(b.GetValue())
+
+	vt := GetNewValueTypeAs(t)
+
+	err := vt.Parse(b.GetValue())
 	if err != nil {
 		return nil, err
 	}
-	return t, nil
+
+	return vt, nil
 }
 
 // AssignTo assigns the value to the given destination.

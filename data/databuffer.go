@@ -27,11 +27,21 @@ type Buffer struct {
 	maxSize uint64
 
 	maxLength uint64
+
+	observe BufferObserver
+}
+
+// BufferObserver is an interface that can be implemented to observe the buffer.
+type BufferObserver interface {
+	// Size is called when the buffer size changes.
+	Size(s uint64)
+	// Length is called when the buffer length changes.
+	Length(l int)
 }
 
 // NewBuffer creates a new buffer with the given maximum size in bytes.
 // If no size is given, the DefaultMaxBufferLength is used.
-// size: the maximum size of the buffer in bytes. and cannot be 0.
+// Size: the maximum size of the buffer in bytes. And cannot be 0.
 func NewBuffer(ctx context.Context, size ...uint64) *Buffer {
 	var bSize uint64 = DefaultMaxBufferSize
 	if len(size) > 0 && size[0] > 0 {
@@ -48,9 +58,14 @@ func NewBuffer(ctx context.Context, size ...uint64) *Buffer {
 	}
 }
 
+func (b *Buffer) WithObserver(observer BufferObserver) *Buffer {
+	b.observe = observer
+	return b
+}
+
 // Write writes the given data sets to the buffer.
-// if the buffer exceeds the maximum conditions, it will be blocked until the buffer conditions are met.
-// if the buffer is closed, it will return an error.
+// If the buffer exceeds the maximum conditions, it will be blocked until the buffer conditions are met.
+// If the buffer is closed, it will return an error.
 func (b *Buffer) Write(data ...*Set) error {
 	b.checkConditions()
 	if b.IsClosed() {
@@ -59,6 +74,7 @@ func (b *Buffer) Write(data ...*Set) error {
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	b.data.Add(data...)
+	b.observeChanges()
 	return nil
 }
 
@@ -74,7 +90,7 @@ func (b *Buffer) Read() (*Set, error) {
 	}
 }
 
-// popDataSet pops the first data set from the buffer. If the buffer is empty, it will be wait.
+// popDataSet pops the first data set from the buffer. If the buffer is empty, it will be waited.
 // If the buffer is closed, and all data sets have been read, it will return an error.
 func (b *Buffer) popDataSet() (*Set, error) {
 	for {
@@ -89,7 +105,9 @@ func (b *Buffer) popDataSet() (*Set, error) {
 	}
 	b.locker.Lock()
 	defer b.locker.Unlock()
-	return b.data.Pop(), nil
+	dSet := b.data.Pop()
+	b.observeChanges()
+	return dSet, nil
 }
 
 // Clear clears the buffer.
@@ -97,6 +115,7 @@ func (b *Buffer) Clear() {
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	b.data = NewDataBatch()
+	b.observeChanges()
 }
 
 // GetSize returns the current size of the buffer in bytes.
@@ -136,7 +155,7 @@ func (b *Buffer) IsEmpty() bool {
 
 // Clone returns a copy of the buffer.
 // The copy will not be affected by the original buffer.
-// and Clone always returns a not closed buffer.
+// And Clone always returns a not closed buffer.
 func (b *Buffer) Clone() *Buffer {
 	b.locker.RLock()
 	defer b.locker.RUnlock()
@@ -146,6 +165,8 @@ func (b *Buffer) Clone() *Buffer {
 		maxSize:   b.maxSize,
 		close:     make(chan any),
 		maxLength: b.maxLength,
+		ctx:       b.ctx,
+		observe:   b.observe,
 	}
 }
 
@@ -160,7 +181,7 @@ func (b *Buffer) IsClosed() bool {
 }
 
 // Close will close the buffer.
-// closed buffer will not accept new data sets.
+// Closed buffer will not accept new data sets.
 // If the buffer is already closed, it will return an error.
 func (b *Buffer) Close() error {
 	if b.IsClosed() {
@@ -173,15 +194,22 @@ func (b *Buffer) Close() error {
 // checkMaxSize checks the maximum size and length of the buffer.
 // If the buffer exceeds the maximum conditions, it will be blocked until the buffer conditions are met.
 func (b *Buffer) checkMaxSize() {
-	checkConditionsF := func() bool {
-		return b.maxSize > b.GetSize() && b.maxLength > uint64(b.GetLength())
-	}
-
-	for {
-		switch {
-		case checkConditionsF():
-			return
+	checkCh := make(chan bool)
+	go func() {
+		for (b.maxSize < b.GetSize() && b.maxLength < uint64(b.GetLength())) || b.IsClosed() {
+			checkCh <- true
 		}
+	}()
+
+	select {
+	case <-b.ctx.Done():
+		err := b.Close()
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	case <-checkCh:
+		return
 	}
 }
 
@@ -199,4 +227,12 @@ func (b *Buffer) checkContext() {
 func (b *Buffer) checkConditions() {
 	b.checkContext()
 	b.checkMaxSize()
+}
+
+func (b *Buffer) observeChanges() {
+	if b.observe == nil {
+		return
+	}
+	b.observe.Length(b.GetLength())
+	b.observe.Size(b.GetSize())
 }

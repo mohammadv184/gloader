@@ -1,3 +1,4 @@
+// Package types is a package that contains some generic data types.
 package types
 
 import (
@@ -36,6 +37,10 @@ func (t *ArrayType) GetTypeName() string {
 }
 
 func (t *ArrayType) GetTypeSize() uint64 {
+	return uint64(unsafe.Sizeof(t))
+}
+
+func (t *ArrayType) GetValueSize() uint64 {
 	return uint64(unsafe.Sizeof(t.value))
 }
 

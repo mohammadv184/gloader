@@ -34,8 +34,8 @@ func (t *ArrayType) GetTypeName() string {
 	return "ARRAY"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *ArrayType) GetTypeSize() int {
+// GetValueSize returns the size of the value in bytes.
+func (t *ArrayType) GetValueSize() int {
 	return len(t.value)
 }
 
@@ -66,8 +66,8 @@ func (t *JSONBType) GetTypeName() string {
 	return "JSONB"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *JSONBType) GetTypeSize() int {
+// GetValueSize returns the size of the value in bytes.
+func (t *JSONBType) GetValueSize() int {
 	return len(t.value)
 }
 

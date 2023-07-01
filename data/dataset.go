@@ -6,12 +6,11 @@ import (
 	"time"
 )
 
-// Set is a collection of related data. It`s used to collect and organize data.
-// also in relational database, it`s called a row.
+// Set is a collection of related data. It's used to collect and organize data.
+// also in relational database, it's called a row.
 type Set []*Data
 
-// Add adds the given data to the set.
-// It does not check for duplicate data.
+// Add appends the given data to the set.
 func (d *Set) Add(data *Data) {
 	*d = append(*d, data)
 }
@@ -30,10 +29,13 @@ func (d *Set) Get(key string) *Data {
 // GetByIndex returns the data at the given index.
 // It returns nil if the index is out of range.
 func (d *Set) GetByIndex(index int) *Data {
+	if index >= d.GetLength() {
+		return nil
+	}
 	return (*d)[index]
 }
 
-// GetSize returns the size of the data set in bytes.
+// GetSize returns approximate size of the data set in bytes.
 func (d *Set) GetSize() uint64 {
 	var size uint64
 	for _, data := range *d {
@@ -61,11 +63,14 @@ func (d *Set) Remove(key string) {
 // RemoveByIndex removes the data at the given index.
 // It does nothing if the index is out of range.
 func (d *Set) RemoveByIndex(index int) {
+	if index >= d.GetLength() {
+		return
+	}
 	*d = append((*d)[:index], (*d)[index+1:]...)
 }
 
 // Set sets the value of the data with the given key.
-// If the data does not exist, it creates a new data with the given key and value.
+// If the data does not exist, it creates new data with the given key and value.
 func (d *Set) Set(key string, value ValueType) {
 	for _, data := range *d {
 		if data.GetKey() == key {
@@ -79,11 +84,18 @@ func (d *Set) Set(key string, value ValueType) {
 // SetByIndex sets the value of the data at the given index.
 // It does nothing if the index is out of range.
 func (d *Set) SetByIndex(index int, value ValueType) {
+	if index >= d.GetLength() {
+		return
+	}
 	(*d)[index].SetValue(value)
 }
 
 // Swap swaps the data at the given indexes.
+// It does nothing if the indexes are out of range.
 func (d *Set) Swap(i, j int) {
+	if i >= d.GetLength() || j >= d.GetLength() {
+		return
+	}
 	(*d)[i], (*d)[j] = (*d)[j], (*d)[i]
 }
 
@@ -103,7 +115,7 @@ func (d *Set) String(delimiter string) string {
 			s.WriteString(fmt.Sprintf("%v", data.GetValue().GetValue()))
 		case KindBool:
 			s.WriteString(fmt.Sprintf("%t", data.GetValue().GetValue()))
-		case KindDateTime:
+		case KindTime:
 			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05")))
 		default:
 			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue()))
@@ -142,7 +154,7 @@ func (d *Set) GetStringValues() []string {
 			values[i] = fmt.Sprintf("%v", data.GetValue().GetValue())
 		case KindBool:
 			values[i] = fmt.Sprintf("%t", data.GetValue().GetValue())
-		case KindDateTime:
+		case KindTime:
 			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05.999999999"))
 		default:
 			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue())

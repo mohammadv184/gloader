@@ -11,7 +11,9 @@ import (
 type Driver interface {
 	// GetDriverName returns the name of the driver.
 	GetDriverName() string
+	// IsWritable returns true if the driver is writable.
 	IsWritable() bool
+	// IsReadable returns true if the driver is readable.
 	IsReadable() bool
 	// Open opens a connection to the database.
 	Open(ctx context.Context, dsn string) (Connection, error)

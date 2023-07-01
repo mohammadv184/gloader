@@ -12,8 +12,6 @@ const (
 	KindFloat
 	KindBool
 	KindTime
-	KindDate
-	KindDateTime
 	KindTimestamp
 	KindDuration
 	KindBytes
@@ -45,8 +43,6 @@ var kindNames = [...]string{
 	KindFloat:     "float",
 	KindBool:      "bool",
 	KindTime:      "time",
-	KindDate:      "date",
-	KindDateTime:  "datetime",
 	KindTimestamp: "timestamp",
 	KindDuration:  "duration",
 	KindBytes:     "bytes",
@@ -69,6 +65,38 @@ var kindNames = [...]string{
 	KindInt64:     "int64",
 	KindFloat32:   "float32",
 	KindFloat64:   "float64",
+}
+
+var baseKindSizes = [...]int{
+	KindUnknown:   0,
+	KindString:    4, // considering max single utf8 char
+	KindInt:       8,
+	KindFloat:     8,
+	KindBool:      1,
+	KindTime:      8,
+	KindTimestamp: 8,
+	KindDuration:  8,
+	KindBytes:     1,
+	KindUint:      8,
+	KindUint8:     1,
+	KindUint16:    2,
+	KindUint32:    4,
+	KindUint64:    8,
+	KindInt8:      1,
+	KindInt16:     2,
+	KindInt32:     4,
+	KindInt64:     8,
+	KindFloat32:   4,
+	KindFloat64:   8,
+}
+
+// GetBaseKindSize returns the size of the base kinds such as int, float, bool, etc. in bytes.
+// It returns 0 if the kind is not a base kind.
+func GetBaseKindSize(k Kind) int {
+	if int(k) < len(baseKindSizes) {
+		return baseKindSizes[k]
+	}
+	return 0
 }
 
 // String returns the name of the kind.

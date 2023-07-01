@@ -37,8 +37,8 @@ func (t *CharType) GetTypeName() string {
 	return "CHAR"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *CharType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *CharType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -73,8 +73,8 @@ func (t *VarCharType) GetTypeName() string {
 	return "VARCHAR"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *VarCharType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *VarCharType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -108,8 +108,8 @@ func (t *TextType) GetTypeName() string {
 	return "TEXT"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *TextType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *TextType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -178,8 +178,8 @@ func (t *SmallIntType) GetTypeName() string {
 	return "SMALLINT"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *SmallIntType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *SmallIntType) GetValueSize() uint64 {
 	return 2
 }
 
@@ -247,8 +247,8 @@ func (t *IntType) GetTypeName() string {
 	return "INT"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *IntType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *IntType) GetValueSize() uint64 {
 	return 4
 }
 
@@ -319,8 +319,8 @@ func (t *TinyIntType) GetTypeName() string {
 	return "TINYINT"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *TinyIntType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *TinyIntType) GetValueSize() uint64 {
 	return 1
 }
 
@@ -388,8 +388,8 @@ func (t *BigIntType) GetTypeName() string {
 	return "BIGINT"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *BigIntType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *BigIntType) GetValueSize() uint64 {
 	return 8
 }
 
@@ -462,8 +462,8 @@ func (t *DecimalType) GetTypeName() string {
 	return "DECIMAL"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *DecimalType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *DecimalType) GetValueSize() uint64 {
 	return 8
 }
 
@@ -498,8 +498,8 @@ func (t *LongBlobType) GetTypeName() string {
 	return "LONGBLOB"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *LongBlobType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *LongBlobType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -533,8 +533,8 @@ func (t *MediumBlobType) GetTypeName() string {
 	return "MEDIUMBLOB"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *MediumBlobType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *MediumBlobType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -568,8 +568,8 @@ func (t *EnumType) GetTypeName() string {
 	return "ENUM"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *EnumType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *EnumType) GetValueSize() uint64 {
 	return uint64(len(t.value))
 }
 
@@ -608,7 +608,7 @@ func (t *DateTimeType) Parse(v any) error {
 
 // GetTypeKind returns the kind of the type.
 func (t *DateTimeType) GetTypeKind() data.Kind {
-	return data.KindDateTime
+	return data.KindTime
 }
 
 // GetTypeName returns the name of the type.
@@ -616,8 +616,8 @@ func (t *DateTimeType) GetTypeName() string {
 	return "DATETIME"
 }
 
-// GetTypeSize returns the size of the value in bytes.
-func (t *DateTimeType) GetTypeSize() uint64 {
+// GetValueSize returns the size of the value in bytes.
+func (t *DateTimeType) GetValueSize() uint64 {
 	return 8
 }
 

@@ -1,6 +1,6 @@
 package data
 
-// Map is a map of data types. It is used to determine schema of a dataCollection.
+// Map is a map of data types. It is used to determine schema of dataCollection.
 // The key is the name of the data type and the value is the data type.
 type Map map[string]Type
 
@@ -29,15 +29,6 @@ func (m Map) Has(key string) bool {
 // Len returns the number of data types in the map.
 func (m Map) Len() int {
 	return len(m)
-}
-
-// Clone returns a copy of the map.
-func (m Map) Clone() Map {
-	clone := Map{}
-	for key, value := range m {
-		clone[key] = GetNewType(value)
-	}
-	return clone
 }
 
 // Keys returns the keys of the map.

@@ -25,9 +25,7 @@ var (
 	ErrSrcConnectionIsRequired      = errors.New("source connection is required")
 )
 
-var (
-	CCCauseStopFuncCalled = errors.New("stop func called")
-)
+var ErrCCCauseStopFuncCalled = errors.New("stop func called")
 
 type GLoader struct {
 	srcConnector              *driver.Connector
@@ -254,5 +252,5 @@ func (g *GLoader) StartWithContext(ctx context.Context) error {
 }
 
 func (g *GLoader) Stop() {
-	g.ctxCancelFunc(CCCauseStopFuncCalled)
+	g.ctxCancelFunc(ErrCCCauseStopFuncCalled)
 }

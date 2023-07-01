@@ -42,7 +42,7 @@ func (b *Batch) Pop() *Set {
 	return set
 }
 
-// GetSize returns the size of the batch in bytes.
+// GetSize returns approximate size of the batch in bytes.
 // It returns 0 if the batch is nil.
 func (b *Batch) GetSize() uint64 {
 	var size uint64

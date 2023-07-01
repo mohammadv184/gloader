@@ -1,3 +1,4 @@
+// Package types is a package that contains some generic data types.
 package types
 
 import (
@@ -29,7 +30,7 @@ func (t *BoolType) GetTypeName() string {
 	return "bool"
 }
 
-func (t *BoolType) GetTypeSize() uint64 {
+func (t *BoolType) GetValueSize() uint64 {
 	return 1
 }
 
