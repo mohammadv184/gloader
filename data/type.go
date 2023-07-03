@@ -45,7 +45,7 @@ type BaseValueType struct{}
 
 var _ Type = &BaseValueType{} // BaseValueType implements Type interface.
 // Parse parses the value and stores it in the receiver.
-// It should be implemented by the parent type. otherwise it returns ErrParseFuncNotImplemented.
+// It should be implemented by the parent type. Otherwise, it returns ErrParseFuncNotImplemented.
 func (*BaseValueType) Parse(_ any) error {
 	return ErrParseFuncNotImplemented
 }
