@@ -13,26 +13,52 @@ import (
 
 // Connection is a connection to a CockroachDB database.
 type Connection struct {
-	conn   *sql.DB
-	dbName string
-	config *Config
+	conn     *sql.DB
+	isClosed bool
+	dbName   string
+	config   *Config
 }
 
 // Close closes the connection to the database.
 func (m *Connection) Close() error {
-	return m.conn.Close()
+	if m.isClosed {
+		return driver.ErrConnectionIsClosed
+	}
+
+	err := m.conn.Close()
+	if err != nil {
+		return err
+	}
+	m.isClosed = true
+	return err
+}
+
+func (m *Connection) Ping() error {
+	if m.isClosed {
+		return driver.ErrConnectionIsClosed
+	}
+	return m.conn.Ping()
+}
+
+// IsClosed returns the status of the connection.
+func (m *Connection) IsClosed() bool {
+	return m.isClosed
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, error) {
-	databaseInfo := driver.DataBaseDetails{
+func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error) {
+	if m.isClosed {
+		return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+	}
+
+	databaseInfo := driver.DatabaseDetail{
 		Name:            m.dbName,
-		DataCollections: make([]driver.DataCollectionDetails, 0),
+		DataCollections: make([]driver.DataCollectionDetail, 0),
 	}
 
 	tables, err := m.conn.Query("SHOW TABLES")
 	if err != nil {
-		return nil, err
+		return driver.DatabaseDetail{}, err
 	}
 	defer tables.Close()
 
@@ -40,10 +66,10 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 		var tableName string
 		err = tables.Scan(&tableName)
 		if err != nil {
-			return nil, err
+			return driver.DatabaseDetail{}, err
 		}
 
-		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetails{
+		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetail{
 			Name:         tableName,
 			DataMap:      make(map[string]data.Type),
 			DataSetCount: 0,
@@ -53,24 +79,37 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 	for i, table := range databaseInfo.DataCollections {
 		columns, err := m.conn.Query("SHOW COLUMNS FROM $1", table.Name)
 		if err != nil {
-			return nil, err
+			return driver.DatabaseDetail{}, err
 		}
 
 		for columns.Next() {
 			var columnName, columnType string
 			err = columns.Scan(&columnName, &columnType)
 			if err != nil {
-				return nil, err
+				return driver.DatabaseDetail{}, err
 			}
 			t, err := GetTypeFromName(columnType)
 			if err != nil {
-				return nil, err
+				return driver.DatabaseDetail{}, err
 			}
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
 		}
+		columns.Close()
+
+		var count int
+		columns, err = m.conn.Query("SELECT COUNT(*) FROM $1", table.Name)
+		if err != nil {
+			return driver.DatabaseDetail{}, err
+		}
+		err = columns.Scan(&count)
+		if err != nil {
+			return driver.DatabaseDetail{}, err
+		}
+		databaseInfo.DataCollections[i].DataSetCount = count
+		columns.Close()
 	}
 
-	return nil, nil
+	return databaseInfo, nil
 }
 
 // Write writes a batch of data to the database.

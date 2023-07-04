@@ -13,27 +13,53 @@ import (
 
 // Connection is a connection to a MySQL database.
 type Connection struct {
-	conn   *sql.DB
-	config *Config
+	conn     *sql.DB
+	isClosed bool
+	config   *Config
 	driver.DefaultFilterBuilder
 	driver.DefaultSortBuilder
 }
 
 // Close closes the connection to the database.
 func (m *Connection) Close() error {
-	return m.conn.Close()
+	if m.isClosed {
+		return driver.ErrConnectionIsClosed
+	}
+
+	err := m.conn.Close()
+	if err != nil {
+		return err
+	}
+	m.isClosed = true
+	return err
+}
+
+// IsClosed returns the status of the connection.
+func (m *Connection) IsClosed() bool {
+	return m.isClosed
+}
+
+// Ping pings the database.
+func (m *Connection) Ping() error {
+	if m.isClosed {
+		return driver.ErrConnectionIsClosed
+	}
+	return m.conn.Ping()
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, error) {
-	databaseInfo := &driver.DataBaseDetails{
+func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error) {
+	if m.isClosed {
+		return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+	}
+	databaseInfo := driver.DatabaseDetail{
 		Name:            m.config.Database,
-		DataCollections: make([]driver.DataCollectionDetails, 0),
+		DataCollections: make([]driver.DataCollectionDetail, 0),
 	}
 
 	tables, err := m.conn.Query("SHOW TABLES")
 	if err != nil {
-		return nil, err
+		return driver.DatabaseDetail{}, err
 	}
 	defer tables.Close()
 
@@ -42,10 +68,10 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 		err = tables.Scan(&tableName)
 
 		if err != nil {
-			return nil, err
+			return driver.DatabaseDetail{}, err
 		}
 
-		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetails{
+		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetail{
 			Name:         tableName,
 			DataMap:      make(map[string]data.Type),
 			DataSetCount: 0,
@@ -55,7 +81,7 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 	for i, table := range databaseInfo.DataCollections {
 		columns, err := m.conn.Query(fmt.Sprintf("SHOW COLUMNS FROM %s", table.Name))
 		if err != nil {
-			return nil, err
+			return driver.DatabaseDetail{}, err
 		}
 
 		for columns.Next() {
@@ -63,13 +89,13 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 			var null any
 			err = columns.Scan(&columnName, &columnType, &null, &null, &null, &null)
 			if err != nil {
-				return nil, err
+				return driver.DatabaseDetail{}, err
 			}
 			columnType = regexp.MustCompile("(\\(\\d+\\)).*").ReplaceAllString(columnType, "")
 
 			t, err := GetTypeFromName(columnType)
 			if err != nil {
-				return nil, err
+				return driver.DatabaseDetail{}, err
 			}
 
 			databaseInfo.DataCollections[i].DataMap[columnName] = t
@@ -77,14 +103,14 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 
 		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL(table.Name)))
 		if err != nil {
-			return nil, err
+			return driver.DatabaseDetail{}, err
 		}
 
 		for rows.Next() {
 			var count int
 			err = rows.Scan(&count)
 			if err != nil {
-				return nil, err
+				return driver.DatabaseDetail{}, err
 			}
 			databaseInfo.DataCollections[i].DataSetCount = count
 		}
@@ -96,6 +122,9 @@ func (m *Connection) GetDetails(_ context.Context) (*driver.DataBaseDetails, err
 
 // Read reads data from the database.
 func (m *Connection) Read(_ context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
+	if m.isClosed {
+		return nil, driver.ErrConnectionIsClosed
+	}
 	fmt.Println("Reading from", startOffset, "to", endOffset)
 
 	batch := data.NewDataBatch()

@@ -12,8 +12,10 @@ type Driver interface {
 	// GetDriverName returns the name of the driver.
 	GetDriverName() string
 	// IsWritable returns true if the driver is writable.
+	// If the driver is writable, returned Connection will implement WritableConnection.
 	IsWritable() bool
 	// IsReadable returns true if the driver is readable.
+	// If the driver is readable, returned Connection will implement ReadableConnection.
 	IsReadable() bool
 	// Open opens a connection to the database.
 	Open(ctx context.Context, dsn string) (Connection, error)
@@ -23,8 +25,14 @@ type Driver interface {
 type Connection interface {
 	// Close closes the connection.
 	Close() error
+	// IsClosed returns true if the connection is closed.
+	IsClosed() bool
+	// Ping pings the database.
+	// This is used to check if the connection is still alive.
+	// If the connection was closed before, the ErrConnectionIsClosed should be returned.
+	Ping() error
 	// GetDetails returns the details of the database.
-	GetDetails(ctx context.Context) (*DataBaseDetails, error)
+	GetDetails(ctx context.Context) (DatabaseDetail, error)
 }
 
 // WritableConnection is a connection to a database that can write data.
@@ -41,20 +49,41 @@ type ReadableConnection interface {
 	Read(ctx context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error)
 }
 
-// DataBaseDetails is the details of a data batch.
-type DataBaseDetails struct {
+// DatabaseDetail is the details of a data batch.
+type DatabaseDetail struct {
 	Name            string
-	DataCollections []DataCollectionDetails
+	DataCollections []DataCollectionDetail
 }
 
-// DataCollectionDetails is the details of a data collection.
-type DataCollectionDetails struct {
+func (d DatabaseDetail) GetDatabaseName() string {
+	return d.Name
+}
+
+func (d DatabaseDetail) GetDataCollections() []DataCollectionDetail {
+	return d.DataCollections
+}
+
+// DataCollectionDetail is the details of a data collection.
+type DataCollectionDetail struct {
 	DataMap      data.Map
 	Name         string
 	DataSetCount int
 }
 
-// Connector is a connector to a database.
+func (d DataCollectionDetail) GetDataMap() data.Map {
+	return d.DataMap
+}
+
+func (d DataCollectionDetail) GetDataCollectionName() string {
+	return d.Name
+}
+
+func (d DataCollectionDetail) GetDataSetCount() int {
+	return d.DataSetCount
+}
+
+// Connector is database connector.
+// It's used to connect to the database quickly with predefined credentials, filters, and sorts.
 type Connector struct {
 	driver Driver
 	dsn    string
@@ -119,6 +148,7 @@ func NewConnector(driver Driver, dsn string) *Connector {
 }
 
 // ConnectionPool is a pool of connections.
+// It's used to manage connections to the database.
 type ConnectionPool struct {
 	connector   *Connector
 	connections []Connection
@@ -185,8 +215,8 @@ func (cp *ConnectionPool) GetConnections() []Connection {
 	return cp.connections
 }
 
-// GetConnectionsLength returns the length of the connections.
-func (cp *ConnectionPool) GetConnectionsLength() uint {
+// GetConnectionLength returns the length of the connections.
+func (cp *ConnectionPool) GetConnectionLength() uint {
 	return uint(len(cp.connections))
 }
 
