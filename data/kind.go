@@ -1,5 +1,7 @@
 package data
 
+import "reflect"
+
 // Kind represents the kind of value.
 // It is a subset of the reflect.Kind.
 // The zero Kind is KindUnknown.
@@ -67,6 +69,37 @@ var kindNames = [...]string{
 	KindFloat64:   "float64",
 }
 
+var reflectKindMap = map[Kind]reflect.Kind{
+	KindUnknown:   reflect.Invalid,
+	KindString:    reflect.String,
+	KindInt:       reflect.Int,
+	KindFloat:     reflect.Float64,
+	KindBool:      reflect.Bool,
+	KindTime:      reflect.Struct,
+	KindTimestamp: reflect.Int64,
+	KindDuration:  reflect.Int64,
+	KindBytes:     reflect.Uint8,
+	KindArray:     reflect.Array,
+	KindMap:       reflect.Map,
+	KindStruct:    reflect.Struct,
+	KindInterface: reflect.Interface,
+	KindPointer:   reflect.Ptr,
+	KindFunc:      reflect.Func,
+	KindChan:      reflect.Chan,
+	KindSlice:     reflect.Slice,
+	KindUint:      reflect.Uint,
+	KindUint8:     reflect.Uint8,
+	KindUint16:    reflect.Uint16,
+	KindUint32:    reflect.Uint32,
+	KindUint64:    reflect.Uint64,
+	KindInt8:      reflect.Int8,
+	KindInt16:     reflect.Int16,
+	KindInt32:     reflect.Int32,
+	KindInt64:     reflect.Int64,
+	KindFloat32:   reflect.Float32,
+	KindFloat64:   reflect.Float64,
+}
+
 var baseKindSizes = [...]int{
 	KindUnknown:   0,
 	KindString:    4, // considering max single utf8 char
@@ -105,6 +138,14 @@ func (k Kind) String() string {
 		return kindNames[k]
 	}
 	return "unknown"
+}
+
+// GetReflectKind returns the reflect.Kind of the kind.
+func (k Kind) GetReflectKind() reflect.Kind {
+	if v, ok := reflectKindMap[k]; ok {
+		return v
+	}
+	return reflect.Invalid
 }
 
 // GetKindFromName returns the kind from the given name.
