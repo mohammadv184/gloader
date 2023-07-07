@@ -203,7 +203,7 @@ func (g *GLoader) StartWithContext(ctx context.Context) error {
 		rConnectionPool := driver.NewConnectionPool(g.srcConnector)
 		wConnectionPool := driver.NewConnectionPool(g.destConnector)
 
-		reader := NewReader(c, dc.Name, buffer, &dc.DataMap, rConnectionPool)
+		reader := NewReader(c, dc.Name, buffer, dc.DataMap, rConnectionPool)
 
 		if offset, ok := g.dataCollectionStartOffset[dc.Name]; ok {
 			reader.SetStartOffset(offset)

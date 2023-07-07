@@ -144,7 +144,6 @@ func (t *BitType) Parse(v any) error {
 			default:
 
 			}
-
 		}
 		t.hasValue = true
 		return nil
@@ -203,6 +202,7 @@ func (t *BoolType) Parse(v any) error {
 		return fmt.Errorf("%v: expected bool, got %T", data.ErrInvalidValue, v)
 	}
 }
+
 func (t *BoolType) GetTypeKind() data.Kind {
 	return data.KindBool
 }
@@ -210,12 +210,15 @@ func (t *BoolType) GetTypeKind() data.Kind {
 func (t *BoolType) GetTypeName() string {
 	return "BOOL"
 }
+
 func (t *BoolType) GetTypeSize() uint64 {
 	return 1
 }
+
 func (t *BoolType) GetValueSize() uint64 {
 	return t.GetTypeSize()
 }
+
 func (t *BoolType) GetValue() any {
 	if !t.hasValue {
 		return nil
@@ -254,15 +257,19 @@ func (t *BytesType) Parse(v any) error {
 		return fmt.Errorf("%v: expected []byte, got %T", data.ErrInvalidValue, v)
 	}
 }
+
 func (t *BytesType) GetTypeKind() data.Kind {
 	return data.KindBytes
 }
+
 func (t *BytesType) GetTypeName() string {
 	return "BYTES"
 }
+
 func (t *BytesType) GetValueSize() uint64 {
 	return t.GetTypeSize() * uint64(len(t.value))
 }
+
 func (t *BytesType) GetValue() any {
 	if !t.hasValue {
 		return nil
@@ -305,15 +312,19 @@ func (t *DateType) Parse(v any) error {
 		return fmt.Errorf("%v: expected time.Time, got %T", data.ErrInvalidValue, v)
 	}
 }
+
 func (t *DateType) GetTypeKind() data.Kind {
 	return data.KindTime
 }
+
 func (t *DateType) GetTypeName() string {
 	return "DATE"
 }
+
 func (t *DateType) GetValueSize() uint64 {
 	return t.GetTypeSize()
 }
+
 func (t *DateType) GetValue() any {
 	if !t.hasValue {
 		return nil

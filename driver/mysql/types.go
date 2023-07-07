@@ -601,6 +601,13 @@ func (t *DateTimeType) Parse(v any) error {
 		}
 		t.value = tm
 		return nil
+	case string:
+		tm, err := time.Parse("2006-01-02 15:04:05.999999999", v.(string))
+		if err != nil {
+			return err
+		}
+		t.value = tm
+		return nil
 	default:
 		return fmt.Errorf("%v: expected time.Time, got %T", data.ErrInvalidValue, v)
 	}

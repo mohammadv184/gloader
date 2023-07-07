@@ -2,18 +2,18 @@ package cockroach
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/mohammadv184/gloader/data"
 	"github.com/mohammadv184/gloader/driver"
-
-	"github.com/mohammadv184/pq"
 )
 
 // Connection is a connection to a CockroachDB database.
 type Connection struct {
-	conn     *sql.DB
+	conn     *pgx.Conn
 	isClosed bool
 	dbName   string
 	config   *Config
@@ -25,7 +25,7 @@ func (m *Connection) Close() error {
 		return driver.ErrConnectionIsClosed
 	}
 
-	err := m.conn.Close()
+	err := m.conn.Close(context.Background())
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (m *Connection) Ping() error {
 	if m.isClosed {
 		return driver.ErrConnectionIsClosed
 	}
-	return m.conn.Ping()
+	return m.conn.Ping(context.Background())
 }
 
 // IsClosed returns the status of the connection.
@@ -46,7 +46,7 @@ func (m *Connection) IsClosed() bool {
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error) {
+func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, error) {
 	if m.isClosed {
 		return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
 	}
@@ -56,35 +56,41 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 		DataCollections: make([]driver.DataCollectionDetail, 0),
 	}
 
-	tables, err := m.conn.Query("SHOW TABLES")
+	tables, err := m.conn.Query(ctx, "SHOW TABLES")
 	if err != nil {
 		return driver.DatabaseDetail{}, err
 	}
-	defer tables.Close()
 
+	// the client will automatically close the rows when all the rows are read
 	for tables.Next() {
 		var tableName string
-		err = tables.Scan(&tableName)
+		err = tables.Scan(nil, &tableName, nil, nil, nil, nil)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
 
 		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetail{
 			Name:         tableName,
-			DataMap:      make(map[string]data.Type),
+			DataMap:      new(data.Map),
 			DataSetCount: 0,
 		})
 	}
 
+	if err = tables.Err(); err != nil {
+		return driver.DatabaseDetail{}, err
+	}
+
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.Query("SHOW COLUMNS FROM $1", table.Name)
+		columns, err := m.conn.Query(ctx, "SHOW COLUMNS FROM $1", table.Name)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
 
+		// the client will automatically close the rows when all the rows are read
 		for columns.Next() {
 			var columnName, columnType string
-			err = columns.Scan(&columnName, &columnType)
+			var columnNullable bool
+			err = columns.Scan(&columnName, &columnType, &columnNullable, nil, nil, nil, nil)
 			if err != nil {
 				return driver.DatabaseDetail{}, err
 			}
@@ -92,16 +98,17 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 			if err != nil {
 				return driver.DatabaseDetail{}, err
 			}
-			databaseInfo.DataCollections[i].DataMap[columnName] = t
+			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable)
 		}
-		columns.Close()
-
-		var count int
-		columns, err = m.conn.Query("SELECT COUNT(*) FROM $1", table.Name)
-		if err != nil {
+		if err = columns.Err(); err != nil {
 			return driver.DatabaseDetail{}, err
 		}
-		err = columns.Scan(&count)
+
+		var count int
+
+		c := m.conn.QueryRow(ctx, "SELECT COUNT(*) FROM $1", table.Name)
+
+		err = c.Scan(&count)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
@@ -113,48 +120,40 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 }
 
 // Write writes a batch of data to the database.
-func (m *Connection) Write(_ context.Context, table string, dataBatch *data.Batch) error {
-	tx, err := m.conn.Begin()
+func (m *Connection) Write(ctx context.Context, table string, dataBatch *data.Batch) error {
+	tx, err := m.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	stmt, err := tx.Prepare(pq.CopyIn(table, dataBatch.Get(0).GetKeys()...))
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
+	rows := make([][]any, dataBatch.GetLength())
 	for _, dataSet := range *dataBatch {
-		values := make([]interface{}, dataSet.GetLength())
-		for i, key := range dataSet.GetStringValues() {
-			values[i] = key
+		row := make([]any, dataSet.GetLength())
+		for i, key := range dataSet.GetValues() {
+			row[i] = key
 		}
-
-		_, err = stmt.Exec(values...)
-		if err != nil {
-			return err
-		}
+		rows = append(rows, row)
 	}
 
-	_, err = stmt.Exec()
+	_, err = tx.CopyFrom(
+		ctx,
+		pgx.Identifier{table},
+		dataBatch.Get(0).GetKeys(),
+		pgx.CopyFromRows(rows),
+	)
+
 	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err.Code == "23505" { // 23505 is the unique_violation error code
-				fmt.Println("Unique violation detected: ", err.Detail, table)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" { // 23505 is the unique_violation error code
+				fmt.Println("Unique violation detected: ", pgErr.Detail, table)
 			}
-			fmt.Println("Error executing statement: ", err.Code, err.Message, err.Detail, table)
+			fmt.Println("Error executing statement: ", pgErr.Code, pgErr.Message, pgErr.Detail, table)
 		}
 		fmt.Println("Error executing statement")
 		return err
 	}
 
-	err = stmt.Close()
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return tx.Commit(ctx)
 }

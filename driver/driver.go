@@ -65,12 +65,12 @@ func (d DatabaseDetail) GetDataCollections() []DataCollectionDetail {
 
 // DataCollectionDetail is the details of a data collection.
 type DataCollectionDetail struct {
-	DataMap      data.Map
+	DataMap      *data.Map
 	Name         string
 	DataSetCount int
 }
 
-func (d DataCollectionDetail) GetDataMap() data.Map {
+func (d DataCollectionDetail) GetDataMap() *data.Map {
 	return d.DataMap
 }
 

@@ -73,7 +73,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 
 		databaseInfo.DataCollections = append(databaseInfo.DataCollections, driver.DataCollectionDetail{
 			Name:         tableName,
-			DataMap:      make(map[string]data.Type),
+			DataMap:      new(data.Map),
 			DataSetCount: 0,
 		})
 	}
@@ -86,8 +86,9 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 
 		for columns.Next() {
 			var columnName, columnType string
+			var columnNullable bool
 			var null any
-			err = columns.Scan(&columnName, &columnType, &null, &null, &null, &null)
+			err = columns.Scan(&columnName, &columnType, &columnNullable, &null, &null, &null)
 			if err != nil {
 				return driver.DatabaseDetail{}, err
 			}
@@ -98,7 +99,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 				return driver.DatabaseDetail{}, err
 			}
 
-			databaseInfo.DataCollections[i].DataMap[columnName] = t
+			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable)
 		}
 
 		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL(table.Name)))
