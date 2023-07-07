@@ -106,7 +106,6 @@ var baseKindSizes = [...]int{
 	KindInt:       8,
 	KindFloat:     8,
 	KindBool:      1,
-	KindTime:      8,
 	KindTimestamp: 8,
 	KindDuration:  8,
 	KindBytes:     1,
