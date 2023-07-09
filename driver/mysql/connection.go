@@ -139,7 +139,6 @@ func (m *Connection) Read(ctx context.Context, dataCollection string, startOffse
 			", "+
 			fmt.Sprint(endOffset-startOffset),
 	)
-
 	if err != nil {
 		return nil, err
 	}

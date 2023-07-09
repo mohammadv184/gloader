@@ -2,7 +2,9 @@ package driver
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/mohammadv184/gloader/data"
 )
@@ -61,6 +63,15 @@ func (d DatabaseDetail) GetDatabaseName() string {
 
 func (d DatabaseDetail) GetDataCollections() []DataCollectionDetail {
 	return d.DataCollections
+}
+
+func (d DatabaseDetail) GetDataCollection(name string) (DataCollectionDetail, error) {
+	for _, dc := range d.DataCollections {
+		if dc.Name == name {
+			return dc, nil
+		}
+	}
+	return DataCollectionDetail{}, fmt.Errorf("data collection %s not found", name)
 }
 
 // DataCollectionDetail is the details of a data collection.
@@ -152,13 +163,28 @@ func NewConnector(driver Driver, dsn string) *Connector {
 type ConnectionPool struct {
 	connector   *Connector
 	connections []Connection
+	locker      *sync.Mutex
 }
 
 // Connect connects to the database.
 func (cp *ConnectionPool) Connect(ctx context.Context) (Connection, uint, error) {
+	cp.locker.Lock()
+	defer cp.locker.Unlock()
+
 	conn, err := cp.connector.Connect(ctx)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	if err := conn.Ping(); err != nil {
+		return nil, 0, err
+	}
+
+	for i, c := range cp.connections {
+		if c == nil {
+			cp.connections[i] = conn
+			return conn, uint(i), nil
+		}
 	}
 
 	cp.connections = append(cp.connections, conn)
@@ -170,6 +196,11 @@ func (cp *ConnectionPool) GetConnection(index uint) (Connection, error) {
 	if index >= uint(len(cp.connections)) {
 		return nil, fmt.Errorf("%v: connection index [%d], with pool size: %d", ErrConnectionPoolOutOfIndex, index, len(cp.connections))
 	}
+
+	if cp.connections[index] == nil {
+		return nil, ErrConnectionIsClosed
+	}
+
 	return cp.connections[index], nil
 }
 
@@ -181,6 +212,9 @@ func (cp *ConnectionPool) CloseAll() error {
 		}
 
 		if err := cp.CloseConnection(uint(i)); err != nil {
+			if errors.Is(err, ErrConnectionIsClosed) {
+				continue
+			}
 			return err
 		}
 	}
@@ -189,6 +223,8 @@ func (cp *ConnectionPool) CloseAll() error {
 
 // CloseConnection closes a connection in the pool.
 func (cp *ConnectionPool) CloseConnection(index uint) error {
+	cp.locker.Lock()
+	defer cp.locker.Unlock()
 	conn, err := cp.GetConnection(index)
 	if err != nil {
 		return err
@@ -210,11 +246,6 @@ func (cp *ConnectionPool) GetConnector() *Connector {
 	return cp.connector
 }
 
-// GetConnections returns the connections.
-func (cp *ConnectionPool) GetConnections() []Connection {
-	return cp.connections
-}
-
 // GetConnectionLength returns the length of the connections.
 func (cp *ConnectionPool) GetConnectionLength() uint {
 	return uint(len(cp.connections))
@@ -225,5 +256,6 @@ func NewConnectionPool(connector *Connector) *ConnectionPool {
 	return &ConnectionPool{
 		connector:   connector,
 		connections: make([]Connection, 0),
+		locker:      &sync.Mutex{},
 	}
 }
