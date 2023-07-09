@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
-	"regexp"
 
 	"github.com/mohammadv184/gloader/data"
 	"github.com/mohammadv184/gloader/driver"
@@ -48,7 +47,7 @@ func (m *Connection) Ping() error {
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error) {
+func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, error) {
 	if m.isClosed {
 		return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
 	}
@@ -57,7 +56,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 		DataCollections: make([]driver.DataCollectionDetail, 0),
 	}
 
-	tables, err := m.conn.Query("SHOW TABLES")
+	tables, err := m.conn.QueryContext(ctx, "SHOW TABLES")
 	if err != nil {
 		return driver.DatabaseDetail{}, err
 	}
@@ -79,7 +78,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 	}
 
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.Query(fmt.Sprintf("SHOW COLUMNS FROM %s", table.Name))
+		columns, err := m.conn.QueryContext(ctx, "SHOW COLUMNS FROM ?", table.Name)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
@@ -92,7 +91,6 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 			if err != nil {
 				return driver.DatabaseDetail{}, err
 			}
-			columnType = regexp.MustCompile("(\\(\\d+\\)).*").ReplaceAllString(columnType, "")
 
 			t, err := GetTypeFromName(columnType)
 			if err != nil {
@@ -102,7 +100,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable)
 		}
 
-		rows, err := m.conn.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL(table.Name)))
+		rows, err := m.conn.QueryContext(ctx, "SELECT COUNT(*) FROM ? "+m.BuildFilterSQL(table.Name), table.Name)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
@@ -122,7 +120,7 @@ func (m *Connection) GetDetails(_ context.Context) (driver.DatabaseDetail, error
 }
 
 // Read reads data from the database.
-func (m *Connection) Read(_ context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
+func (m *Connection) Read(ctx context.Context, dataCollection string, startOffset, endOffset uint64) (*data.Batch, error) {
 	if m.isClosed {
 		return nil, driver.ErrConnectionIsClosed
 	}
@@ -130,7 +128,18 @@ func (m *Connection) Read(_ context.Context, dataCollection string, startOffset,
 
 	batch := data.NewDataBatch()
 
-	rows, err := m.conn.Query("SELECT * FROM " + dataCollection + m.BuildFilterSQL(dataCollection) + m.BuildSortSQL(dataCollection) + " LIMIT " + fmt.Sprint(startOffset) + ", " + fmt.Sprint(endOffset-startOffset))
+	rows, err := m.conn.QueryContext(
+		ctx,
+		"SELECT * FROM "+
+			dataCollection+
+			m.BuildFilterSQL(dataCollection)+
+			m.BuildSortSQL(dataCollection)+
+			" LIMIT "+
+			fmt.Sprint(startOffset)+
+			", "+
+			fmt.Sprint(endOffset-startOffset),
+	)
+
 	if err != nil {
 		return nil, err
 	}
