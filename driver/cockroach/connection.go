@@ -17,6 +17,8 @@ type Connection struct {
 	isClosed bool
 	dbName   string
 	config   *Config
+	driver.DefaultFilterBuilder
+	driver.DefaultSortBuilder
 }
 
 // Close closes the connection to the database.
@@ -106,7 +108,7 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 
 		var count int
 
-		c := m.conn.QueryRow(ctx, "SELECT COUNT(*) FROM $1", table.Name)
+		c := m.conn.QueryRow(ctx, "SELECT COUNT(*) FROM $1 "+m.BuildFilterSQL(table.Name), table.Name)
 
 		err = c.Scan(&count)
 		if err != nil {
@@ -121,20 +123,63 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 
 // Write writes a batch of data to the database.
 func (m *Connection) Write(ctx context.Context, table string, dataBatch *data.Batch) error {
+	if m.isClosed {
+		return driver.ErrConnectionIsClosed
+	}
+
+	if dataBatch.GetLength() == 0 {
+		return nil
+	}
+
+	dDetails, err := m.GetDetails(ctx)
+	if err != nil {
+		return fmt.Errorf("cockroach: failed to get database details: %w", err)
+	}
+
+	tDetails, err := dDetails.GetDataCollection(table)
+	if err != nil {
+		return fmt.Errorf("cockroach: failed to get table details: %w", err)
+	}
+
+	if dataBatch.Get(0).GetLength() != tDetails.DataMap.Len() {
+		return fmt.Errorf("cockroach: dataSet length is not equal to table columns length")
+	}
+
+	rows := make([][]any, dataBatch.GetLength())
+	for _, dataSet := range *dataBatch {
+		row := make([]any, dataSet.GetLength())
+		for i, d := range *dataSet {
+			if !tDetails.DataMap.Has(d.GetKey()) {
+				return fmt.Errorf("cockroach: column %s not found", d.GetKey())
+			}
+
+			if tDetails.DataMap.Get(d.GetKey()).GetTypeKind() != d.GetValueType().GetTypeKind() {
+				return fmt.Errorf(
+					"cockroach: column %s data type kind mismatch ( %s != %s )",
+					d.GetKey(),
+					tDetails.DataMap.Get(d.GetKey()).GetTypeKind().String(),
+					d.GetValueType().GetTypeKind().String(),
+				)
+			}
+
+			if !tDetails.DataMap.IsNullable(d.GetKey()) && d.GetValueType().GetValue() == nil {
+				return fmt.Errorf("cockroach: column %s is not nullable", d.GetKey())
+			}
+
+			dValueType, err := d.GetValueType().To(tDetails.DataMap.Get(d.GetKey()))
+			if err != nil {
+				return fmt.Errorf("cockroach: failed to convert data type: %w", err)
+			}
+			row[i] = dValueType.GetValue()
+		}
+		rows = append(rows, row)
+	}
+
 	tx, err := m.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-
-	rows := make([][]any, dataBatch.GetLength())
-	for _, dataSet := range *dataBatch {
-		row := make([]any, dataSet.GetLength())
-		for i, key := range dataSet.GetValues() {
-			row[i] = key
-		}
-		rows = append(rows, row)
-	}
 
 	_, err = tx.CopyFrom(
 		ctx,
