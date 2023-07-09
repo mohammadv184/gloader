@@ -105,19 +105,19 @@ func (b *Batch) ToCSV() []byte {
 			buf.WriteString("\n")
 		}
 		for j, data := range *set {
-			valueKind := data.GetValue().GetTypeKind()
+			valueKind := data.GetValueType().GetTypeKind()
 			var value string
 			switch valueKind {
 			case KindBool:
-				value = fmt.Sprintf("%t", data.GetValue().GetValue())
+				value = fmt.Sprintf("%t", data.GetValueType().GetValue())
 			case KindInt:
-				value = fmt.Sprintf("%d", data.GetValue().GetValue())
+				value = fmt.Sprintf("%d", data.GetValueType().GetValue())
 			case KindFloat:
-				value = fmt.Sprintf("%f", data.GetValue().GetValue())
+				value = fmt.Sprintf("%f", data.GetValueType().GetValue())
 			case KindBytes:
-				value = fmt.Sprintf("%s", string(data.GetValue().GetValue().([]byte)))
+				value = fmt.Sprintf("%s", string(data.GetValueType().GetValue().([]byte)))
 			default:
-				value = fmt.Sprintf("%v", data.GetValue().GetValue())
+				value = fmt.Sprintf("%v", data.GetValueType().GetValue())
 			}
 			if j == 0 {
 				buf.WriteString(value)

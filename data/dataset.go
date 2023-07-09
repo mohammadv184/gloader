@@ -108,17 +108,17 @@ func (d *Set) String(delimiter string) string {
 		if i > 0 {
 			s.WriteString(delimiter)
 		}
-		switch data.GetValue().GetTypeKind() {
+		switch data.GetValueType().GetTypeKind() {
 		case KindInt, KindInt8, KindInt16, KindInt32, KindInt64,
 			KindUint, KindUint8, KindUint16, KindUint32, KindUint64,
 			KindFloat32, KindFloat64:
-			s.WriteString(fmt.Sprintf("%v", data.GetValue().GetValue()))
+			s.WriteString(fmt.Sprintf("%v", data.GetValueType().GetValue()))
 		case KindBool:
-			s.WriteString(fmt.Sprintf("%t", data.GetValue().GetValue()))
+			s.WriteString(fmt.Sprintf("%t", data.GetValueType().GetValue()))
 		case KindTime:
-			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05")))
+			s.WriteString(fmt.Sprintf("%s", data.GetValueType().GetValue().(time.Time).Format("2006-01-02 15:04:05")))
 		default:
-			s.WriteString(fmt.Sprintf("%s", data.GetValue().GetValue()))
+			s.WriteString(fmt.Sprintf("%s", data.GetValueType().GetValue()))
 		}
 
 	}
@@ -138,7 +138,7 @@ func (d *Set) GetKeys() []string {
 func (d *Set) GetValues() []ValueType {
 	values := make([]ValueType, len(*d))
 	for i, data := range *d {
-		values[i] = data.GetValue()
+		values[i] = data.GetValueType()
 	}
 	return values
 }
@@ -147,17 +147,17 @@ func (d *Set) GetValues() []ValueType {
 func (d *Set) GetStringValues() []string {
 	values := make([]string, len(*d))
 	for i, data := range *d {
-		switch data.GetValue().GetTypeKind() {
+		switch data.GetValueType().GetTypeKind() {
 		case KindInt, KindInt8, KindInt16, KindInt32, KindInt64,
 			KindUint, KindUint8, KindUint16, KindUint32, KindUint64,
 			KindFloat32, KindFloat64:
-			values[i] = fmt.Sprintf("%v", data.GetValue().GetValue())
+			values[i] = fmt.Sprintf("%v", data.GetValueType().GetValue())
 		case KindBool:
-			values[i] = fmt.Sprintf("%t", data.GetValue().GetValue())
+			values[i] = fmt.Sprintf("%t", data.GetValueType().GetValue())
 		case KindTime:
-			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue().(time.Time).Format("2006-01-02 15:04:05.999999999"))
+			values[i] = fmt.Sprintf("%s", data.GetValueType().GetValue().(time.Time).Format("2006-01-02 15:04:05.999999999"))
 		default:
-			values[i] = fmt.Sprintf("%s", data.GetValue().GetValue())
+			values[i] = fmt.Sprintf("%s", data.GetValueType().GetValue())
 		}
 	}
 	return values

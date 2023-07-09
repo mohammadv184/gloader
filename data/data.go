@@ -26,8 +26,8 @@ func (d *Data) GetKey() string {
 	return d.Key
 }
 
-// GetValue returns the value of the data.
-func (d *Data) GetValue() ValueType {
+// GetValueType returns the value of the data.
+func (d *Data) GetValueType() ValueType {
 	return d.Value
 }
 

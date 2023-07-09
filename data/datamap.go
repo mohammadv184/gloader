@@ -5,12 +5,18 @@ package data
 type Map struct {
 	typesMap      map[string]Type
 	isNullableMap map[string]bool
+	typesIndex    []string
 }
 
 // Get returns the data type with the given name.
 // It returns nil if the data type does not exist.
 func (m *Map) Get(key string) Type {
 	return m.typesMap[key]
+}
+
+// GetIndex returns the data type with the given index.
+func (m *Map) GetIndex(index int) Type {
+	return m.typesMap[m.typesIndex[index]]
 }
 
 func (m *Map) IsNullable(key string) bool {
@@ -28,10 +34,21 @@ func (m *Map) Set(key string, value Type, isNullable ...bool) {
 	}
 
 	m.typesMap[key] = value
+	m.typesIndex = append(m.typesIndex, key)
 }
 
 // Delete deletes the data type with the given name.
 func (m *Map) Delete(key string) {
+	for i, k := range m.typesIndex {
+		if k == key {
+			if i == len(m.typesIndex)-1 {
+				m.typesIndex = m.typesIndex[:i]
+			} else {
+				m.typesIndex = append(m.typesIndex[:i], m.typesIndex[i+1:]...)
+			}
+			break
+		}
+	}
 	delete(m.typesMap, key)
 	delete(m.isNullableMap, key)
 }
@@ -40,6 +57,10 @@ func (m *Map) Delete(key string) {
 func (m *Map) Has(key string) bool {
 	_, ok := m.typesMap[key]
 	return ok
+}
+
+func (m *Map) HasIndex(index int) bool {
+	return index >= 0 && index < len(m.typesIndex)
 }
 
 // Len returns the number of data types in the map.

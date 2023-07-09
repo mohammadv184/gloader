@@ -63,7 +63,6 @@ func (r *Reader) Start() error {
 	if r.endOffset == 0 {
 		return ErrEndOffsetRequired
 	}
-
 	if r.endOffset < r.startOffset {
 		return ErrEndOffsetLessThanStartOffset
 	}
