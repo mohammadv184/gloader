@@ -391,23 +391,325 @@ func (t *JSONBType) GetValue() any {
 	return t.value
 }
 
+// UUIDType is a type for UUID.
+type UUIDType struct {
+	data.BaseValueType
+	value    string
+	hasValue bool
+}
+
+var _ data.ValueType = &UUIDType{}
+
+// Parse parses the value and stores it in the receiver.
+func (t *UUIDType) Parse(v any) error {
+	if v == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch v.(type) {
+	case string:
+		t.value = v.(string)
+		t.hasValue = true
+		return nil
+	default:
+		return fmt.Errorf("%v: expected string, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *UUIDType) GetTypeKind() data.Kind {
+	return data.KindString
+}
+
+// GetTypeName returns the name of the type.
+func (t *UUIDType) GetTypeName() string {
+	return "UUID"
+}
+
+// GetTypeSize returns the size of the type in bytes.
+func (t *UUIDType) GetTypeSize() uint64 {
+	return 16
+}
+
+// GetValueSize returns the size of the value in bytes.
+func (t *UUIDType) GetValueSize() uint64 {
+	return t.GetTypeSize()
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *UUIDType) GetValue() any {
+	if !t.hasValue {
+		return nil
+	}
+
+	return t.value
+}
+
+// StringType is a type for string.
+type StringType struct {
+	data.BaseValueType
+	value    string
+	hasValue bool
+}
+
+var _ data.ValueType = &StringType{}
+
+// Parse parses the value and stores it in the receiver.
+func (t *StringType) Parse(v any) error {
+	if v == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch v.(type) {
+	case string:
+		t.value = v.(string)
+		t.hasValue = true
+		return nil
+	default:
+		return fmt.Errorf("%v: expected string, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *StringType) GetTypeKind() data.Kind {
+	return data.KindString
+}
+
+// GetTypeName returns the name of the type.
+func (t *StringType) GetTypeName() string {
+	return "STRING"
+}
+
+// GetTypeSize returns the size of the type in bytes.
+func (t *StringType) GetTypeSize() uint64 {
+	return 1
+}
+
+// GetValueSize returns the size of the value in bytes.
+func (t *StringType) GetValueSize() uint64 {
+	return uint64(len(t.value))
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *StringType) GetValue() any {
+	if !t.hasValue {
+		return nil
+	}
+
+	return t.value
+}
+
+// TimestampType is a type for TIMESTAMP.
+type TimestampType struct {
+	data.BaseValueType
+	value    time.Time
+	hasValue bool
+}
+
+var _ data.ValueType = &TimestampType{}
+
+// Parse parses the value and stores it in the receiver.
+func (t *TimestampType) Parse(v any) error {
+	if v == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch tv := v.(type) {
+	case time.Time:
+		t.value = tv
+		t.hasValue = true
+		return nil
+	case string:
+		// Date only	TIMESTAMP '2016-01-25'
+		// Date and Time	TIMESTAMP '2016-01-25 10:10:10.555555'
+		// ISO 8601	TIMESTAMP '2016-01-25T10:10:10.555555'
+
+		tm, err := time.Parse("2006-01-02 15:04:05.999999", tv)
+		if err != nil {
+			if tm, err = time.Parse("2006-01-02T15:04:05.999999", tv); err != nil {
+				if tm, err = time.Parse("2006-01-02", tv); err != nil {
+					return err
+				}
+			}
+		}
+		t.value = tm
+		t.hasValue = true
+		return nil
+	default:
+		return fmt.Errorf("%v: expected time.Time, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *TimestampType) GetTypeKind() data.Kind {
+	return data.KindTime
+}
+
+// GetTypeName returns the name of the type.
+func (t *TimestampType) GetTypeName() string {
+	return "TIMESTAMP"
+}
+
+// GetTypeSize returns the size of the type in bytes.
+func (t *TimestampType) GetTypeSize() uint64 {
+	// In CockroachDB, the TIMESTAMP type has a fixed size of 12 bytes.
+	return 12
+}
+
+// GetValueSize returns the size of the value in bytes.
+func (t *TimestampType) GetValueSize() uint64 {
+	return t.GetTypeSize()
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *TimestampType) GetValue() any {
+	if !t.hasValue {
+		return nil
+	}
+
+	return t.value
+}
+
+// IntType is a type for INT.
+type IntType struct {
+	data.BaseValueType
+	value    int64
+	hasValue bool
+}
+
+var _ data.ValueType = &IntType{}
+
+// Parse parses the value and stores it in the receiver.
+func (t *IntType) Parse(v any) error {
+	if v == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(v).Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	switch tv := v.(type) {
+	case int:
+		t.value = int64(tv)
+		t.hasValue = true
+		return nil
+	case int8:
+		t.value = int64(tv)
+		t.hasValue = true
+		return nil
+	case int16:
+		t.value = int64(tv)
+		t.hasValue = true
+		return nil
+	case int32:
+		t.value = int64(tv)
+		t.hasValue = true
+		return nil
+	case int64:
+		t.value = tv
+		t.hasValue = true
+		return nil
+	default:
+		return fmt.Errorf("%v: expected int, got %T", data.ErrInvalidValue, v)
+	}
+}
+
+// GetTypeKind returns the kind of the type.
+func (t *IntType) GetTypeKind() data.Kind {
+	return data.KindInt
+}
+
+// GetTypeName returns the name of the type.
+func (t *IntType) GetTypeName() string {
+	return "INT"
+}
+
+// GetTypeSize returns the size of the type in bytes.
+func (t *IntType) GetTypeSize() uint64 {
+	// In CockroachDB, the INT type has a fixed size of 8 bytes.
+	return 8
+}
+
+// GetValueSize returns the size of the value in bytes.
+func (t *IntType) GetValueSize() uint64 {
+	return t.GetTypeSize()
+}
+
+// GetValue returns the value stored in the receiver.
+func (t *IntType) GetValue() any {
+	if !t.hasValue {
+		return nil
+	}
+
+	return t.value
+}
+
 var ErrTypeNotFound = errors.New("type not found") // ErrTypeNotFound is returned when a type is not found.
 // GetTypeFromName returns a type from its name.
 func GetTypeFromName(name string) (data.Type, error) {
 	switch {
 	case mustMatchString("(?i)array", name):
-		return &ArrayType{}, nil
+		t := &ArrayType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)bit", name) || mustMatchString("(?i)varbit", name):
-		return &BitType{}, nil
+		t := &BitType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)bool", name) || mustMatchString("(?i)boolean", name):
-		return &BoolType{}, nil
+		t := &BoolType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)bytes", name) || mustMatchString("(?i)blob", name) || mustMatchString("(?i)bytea", name):
-		return &BytesType{}, nil
+		t := &BytesType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)date", name):
-		return &DateType{}, nil
+		t := &DateType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)jsonb", name) || mustMatchString("(?i)json", name):
-		return &JSONBType{}, nil
+		t := &JSONBType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)uuid", name):
+		t := &UUIDType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)string", name) ||
+		mustMatchString("(?i)varchar", name) ||
+		mustMatchString("(?i)text", name) ||
+		mustMatchString("(?i)character", name) ||
+		mustMatchString("(?i)char", name):
 
+		t := &StringType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)timestamp", name):
+		t := &TimestampType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)int", name) ||
+		mustMatchString("(?i)integer", name) ||
+		mustMatchString("(?i)smallint", name) ||
+		mustMatchString("(?i)bigint", name):
+
+		t := &IntType{}
+		t.Init(t)
+		return t, nil
 	default:
 		return nil, fmt.Errorf("%v: %s", ErrTypeNotFound, name)
 	}
