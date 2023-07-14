@@ -74,6 +74,47 @@ func (d DatabaseDetail) GetDataCollection(name string) (DataCollectionDetail, er
 	return DataCollectionDetail{}, fmt.Errorf("data collection %s not found", name)
 }
 
+// OnlyDataCollections returns only the data collections with matching names.
+// If no names are provided, all data collections will be returned.
+// If provided names are not found, they will be ignored.
+func (d DatabaseDetail) OnlyDataCollections(names ...string) []DataCollectionDetail {
+	if len(names) == 0 {
+		return d.DataCollections
+	}
+	var result []DataCollectionDetail
+	for _, dc := range d.DataCollections {
+		for _, name := range names {
+			if dc.Name == name {
+				result = append(result, dc)
+			}
+		}
+	}
+	return result
+}
+
+// AllDataCollectionsExcept returns all data collections except the ones with matching names.
+// If no names are provided, all data collections will be returned.
+// If provided names are not found, they will be ignored.
+func (d DatabaseDetail) AllDataCollectionsExcept(names ...string) []DataCollectionDetail {
+	if len(names) == 0 {
+		return d.DataCollections
+	}
+	var result []DataCollectionDetail
+	for _, dc := range d.DataCollections {
+		var found bool
+		for _, name := range names {
+			if dc.Name == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, dc)
+		}
+	}
+	return result
+}
+
 // DataCollectionDetail is the details of a data collection.
 type DataCollectionDetail struct {
 	DataMap      *data.Map
