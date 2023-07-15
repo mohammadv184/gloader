@@ -194,11 +194,16 @@ func (b *Buffer) Close() error {
 // checkMaxSize checks the maximum size and length of the buffer.
 // If the buffer exceeds the maximum conditions, it will be blocked until the buffer conditions are met.
 func (b *Buffer) checkMaxSize() {
-	checkCh := make(chan bool)
+	checkCh := make(chan any)
 	go func() {
-		for (b.maxSize < b.GetSize() && b.maxLength < uint64(b.GetLength())) || b.IsClosed() {
-			checkCh <- true
+		for b.maxSize < b.GetSize() || b.maxLength < uint64(b.GetLength()) {
+			if b.IsClosed() {
+				checkCh <- 1
+				return
+			}
+			continue
 		}
+		checkCh <- 1
 	}()
 
 	select {
@@ -209,6 +214,7 @@ func (b *Buffer) checkMaxSize() {
 		}
 		return
 	case <-checkCh:
+		close(checkCh)
 		return
 	}
 }
