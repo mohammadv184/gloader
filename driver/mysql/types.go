@@ -21,12 +21,12 @@ type CharType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *CharType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -67,12 +67,12 @@ type VarCharType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *VarCharType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -112,12 +112,12 @@ type BinaryType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *BinaryType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = v.([]byte)
@@ -157,12 +157,12 @@ type TextType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *TextType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -203,12 +203,12 @@ type SmallIntType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *SmallIntType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -290,12 +290,12 @@ type IntType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *IntType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -377,12 +377,12 @@ type TinyIntType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *TinyIntType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -469,12 +469,12 @@ type BigIntType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *BigIntType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -555,12 +555,12 @@ type DecimalType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *DecimalType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -650,12 +650,12 @@ type LongBlobType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *LongBlobType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = []byte(fmt.Sprintf("%s", v))
@@ -695,12 +695,12 @@ type MediumBlobType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *MediumBlobType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = []byte(fmt.Sprintf("%s", v))
@@ -740,12 +740,12 @@ type EnumType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *EnumType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -786,12 +786,12 @@ type DateTimeType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *DateTimeType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -852,12 +852,12 @@ type BlobType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *BlobType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = v.([]byte)
@@ -897,12 +897,12 @@ type MediumTextType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *MediumTextType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -942,12 +942,12 @@ type LongTextType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *LongTextType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	t.value = fmt.Sprintf("%s", v)
@@ -987,12 +987,12 @@ type FloatType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *FloatType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -1049,12 +1049,12 @@ type DoubleType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *DoubleType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -1111,12 +1111,12 @@ type DateType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *DateType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -1169,12 +1169,12 @@ type TimestampType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *TimestampType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -1224,45 +1224,85 @@ var ErrTypeNotFound = errors.New("type not found") // ErrTypeNotFound is returne
 func GetTypeFromName(name string) (data.Type, error) {
 	switch {
 	case mustMatchString("(?i)char", name):
-		return &CharType{}, nil
+		t := &CharType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)smallint", name):
-		return &SmallIntType{}, nil
+		t := &SmallIntType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)bigint", name):
-		return &BigIntType{}, nil
+		t := &BigIntType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)longblob", name):
-		return &LongBlobType{}, nil
+		t := &LongBlobType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)datetime", name):
-		return &DateTimeType{}, nil
+		t := &DateTimeType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)enum", name):
-		return &EnumType{}, nil
+		t := &EnumType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)mediumblob", name):
-		return &MediumBlobType{}, nil
+		t := &MediumBlobType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)decimal", name):
-		return &DecimalType{}, nil
-	case mustMatchString("(?i)int", name):
-		return &IntType{}, nil
-	case mustMatchString("(?i)varchar", name):
-		return &VarCharType{}, nil
-	case mustMatchString("(?i)text", name):
-		return &TextType{}, nil
+		t := &DecimalType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)tinyint", name):
-		return &TinyIntType{}, nil
+		t := &TinyIntType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)int", name):
+		t := &IntType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)varchar", name):
+		t := &VarCharType{}
+		t.Init(t)
+		return t, nil
+	case mustMatchString("(?i)text", name):
+		t := &TextType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)binary", name):
-		return &BinaryType{}, nil
+		t := &BinaryType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)blob", name):
-		return &BlobType{}, nil
+		t := &BlobType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)timestamp", name):
-		return &TimestampType{}, nil
+		t := &TimestampType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)mediumtext", name):
-		return &MediumTextType{}, nil
+		t := &MediumTextType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)longtext", name):
-		return &LongTextType{}, nil
+		t := &LongTextType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)float", name):
-		return &FloatType{}, nil
+		t := &FloatType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)double", name):
-		return &DoubleType{}, nil
+		t := &DoubleType{}
+		t.Init(t)
+		return t, nil
 	case mustMatchString("(?i)date", name):
-		return &DateType{}, nil
+		t := &DateType{}
+		t.Init(t)
+		return t, nil
 
 	default:
 		return nil, fmt.Errorf("%v: %s", ErrTypeNotFound, name)
