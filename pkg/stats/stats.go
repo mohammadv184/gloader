@@ -1,45 +1,85 @@
 // Package stats provide a simple real-time metric registry for monitoring and observability.
 package stats
 
-type Registry interface {
-	RegisterSequentialCounter(name, description string) SequentialCounter
-	RegisterGaugeCounter(name, description string) GaugeCounter
-	GetSequentialCounter(name string) (SequentialCounter, error)
-	GetGaugeCounter(name string) (GaugeCounter, error)
-	MustGetSequentialCounter(name string) SequentialCounter
-	MustGetGaugeCounter(name string) GaugeCounter
+import (
+	"fmt"
+)
+
+type Stats struct {
+	registry Registry
 }
 
-// Counter is a metric that accumulates values monotonically.
-type Counter interface {
-	// Tags returns the tags of the counter.
-	Tags() []string
-	// Value returns the current value of the counter.
-	Value(tags ...[]string) int64
-	// NotifyOnChange returns a channel that is closed when the counter value changes.
-	NotifyOnChange(tags ...[]string) <-chan struct{}
+func New() *Stats {
+	return &Stats{
+		registry: NewDefaultRegistry(),
+	}
 }
 
-// SequentialCounter is a counter that can only be incremented.
-type SequentialCounter interface {
-	Counter
-	// Inc increments the counter by 1 and returns the new value.
-	Inc(tags ...[]string) int64
-	// IncBy increments the counter by delta and returns the new value.
-	IncBy(delta int64, tags ...[]string) int64
+func (s *Stats) WithRegistry(registry Registry) *Stats {
+	s.registry = registry
+	return s
 }
 
-// GaugeCounter is a counter that can be set to arbitrary values.
-type GaugeCounter interface {
-	Counter
-	// Set sets the counter to the given value.
-	Set(value int64, tags ...[]string)
-	// Inc increments the counter by 1 and returns the new value.
-	Inc(tags ...[]string) int64
-	// IncBy increments the counter by delta and returns the new value.
-	IncBy(delta int64, tags ...[]string) int64
-	// Dec decrements the counter by 1 and returns the new value.
-	Dec(tags ...[]string) int64
-	// DecBy decrements the counter by delta and returns the new value.
-	DecBy(delta int64, tags ...[]string) int64
+func (s *Stats) Registry() Registry {
+	return s.registry
+}
+
+func (s *Stats) RegisterSequentialCounter(name, description string) SequentialCounter {
+	m := NewDefaultSequentialCounter()
+	s.registry.RegisterMetric(name, description, m)
+	return m
+}
+
+func (s *Stats) RegisterGaugeCounter(name, description string) GaugeCounter {
+	m := NewDefaultGaugeCounter()
+	s.registry.RegisterMetric(name, description, m)
+	return m
+}
+
+func (s *Stats) GetSequentialCounter(name string) (SequentialCounter, error) {
+	m, err := s.registry.GetMetric(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := m.(SequentialCounter); ok {
+		return m, nil
+	}
+	return nil, fmt.Errorf("stats: metric %s is not a SequentialCounter", name)
+}
+
+func (s *Stats) GetGaugeCounter(name string) (GaugeCounter, error) {
+	m, err := s.registry.GetMetric(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := m.(GaugeCounter); ok {
+		return m, nil
+	}
+	return nil, fmt.Errorf("stats: metric %s is not a GaugeCounter", name)
+}
+
+func (s *Stats) MustGetSequentialCounter(name string) SequentialCounter {
+	m, err := s.registry.GetMetric(name)
+	if err != nil {
+		panic(err)
+	}
+
+	if m, ok := m.(SequentialCounter); ok {
+		return m
+	}
+	panic(fmt.Errorf("stats: metric %s is not a SequentialCounter", name))
+}
+
+func (s *Stats) MustGetGaugeCounter(name string) GaugeCounter {
+	m, err := s.registry.GetMetric(name)
+	if err != nil {
+		panic(err)
+	}
+
+	if m, ok := m.(GaugeCounter); ok {
+		return m
+	}
+	panic(fmt.Errorf("stats: metric %s is not a GaugeCounter", name))
 }
