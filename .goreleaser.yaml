@@ -110,6 +110,7 @@ nfpms:
     maintainer: Mohammad Abbasi <mohammad.v184@gmail.com>
     description: gloader is database data migration tool from any source to any destination
     license: MIT
+    section: utility
     formats:
       - deb
       - rpm
@@ -149,10 +150,3 @@ publishers:
     cmd: ./scripts/fury-release.sh {{ .ArtifactName }}
 
 
-
-
-
-# The lines beneath this are called `modelines`. See `:help modeline`
-# Feel free to remove those if you don't want/use them.
-# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-# vim: set ts=2 sw=2 tw=0 fo=cnqoj
