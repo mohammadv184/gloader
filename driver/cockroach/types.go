@@ -25,12 +25,12 @@ var _ data.ValueType = &ArrayType{}
 
 // Parse parses the value and stores it in the receiver.
 func (t *ArrayType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 	switch v.(type) {
 	case []any:
@@ -82,12 +82,12 @@ type BitType struct {
 var _ data.ValueType = &BitType{}
 
 func (t *BitType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -185,12 +185,12 @@ type BoolType struct {
 var _ data.ValueType = &BoolType{}
 
 func (t *BoolType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -236,12 +236,12 @@ type BytesType struct {
 var _ data.ValueType = &BytesType{}
 
 func (t *BytesType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -287,12 +287,12 @@ type DateType struct {
 var _ data.ValueType = &DateType{}
 
 func (t *DateType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -342,12 +342,12 @@ type JSONBType struct {
 
 // Parse parses the value and stores it in the receiver.
 func (t *JSONBType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -402,12 +402,12 @@ var _ data.ValueType = &UUIDType{}
 
 // Parse parses the value and stores it in the receiver.
 func (t *UUIDType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -460,12 +460,12 @@ var _ data.ValueType = &StringType{}
 
 // Parse parses the value and stores it in the receiver.
 func (t *StringType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch v.(type) {
@@ -518,12 +518,12 @@ var _ data.ValueType = &TimestampType{}
 
 // Parse parses the value and stores it in the receiver.
 func (t *TimestampType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -593,12 +593,12 @@ var _ data.ValueType = &IntType{}
 
 // Parse parses the value and stores it in the receiver.
 func (t *IntType) Parse(v any) error {
-	if v == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(v).Kind() == reflect.Pointer {
 		v = reflect.ValueOf(v).Elem().Interface()
+	}
+
+	if v == nil {
+		return nil
 	}
 
 	switch tv := v.(type) {
@@ -629,7 +629,7 @@ func (t *IntType) Parse(v any) error {
 
 // GetTypeKind returns the kind of the type.
 func (t *IntType) GetTypeKind() data.Kind {
-	return data.KindInt
+	return data.KindInt64
 }
 
 // GetTypeName returns the name of the type.
