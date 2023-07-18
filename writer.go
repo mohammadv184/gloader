@@ -78,15 +78,16 @@ func (w *Writer) RunWorker() {
 					batch.Add(dSet)
 					break
 				}
-				log.Println(err)
+				panic(err)
 				return
 			}
 
-			// fmt.Println("Length: ", w.dataCollection, batch.GetLength())
+			// fmt.Println("LengthChanged: ", w.dataCollection, batch.GetLength())
 			batch.Add(dSet)
 		}
 
 		if batch.GetLength() > 0 {
+			//fmt.Println("Writing: ", w.dataCollection, batch.GetLength())
 			if err := wConn.Write(w.ctx, w.dataCollection, batch); err != nil {
 				log.Printf("error on writing data to %s: %s", w.dataCollection, err)
 				panic(err)
@@ -94,10 +95,11 @@ func (w *Writer) RunWorker() {
 		}
 
 		if w.buffer.IsClosed() && w.buffer.IsEmpty() {
-			log.Printf("%s Writer worker is closed", w.dataCollection)
+			//log.Printf("%s Writer worker is closed", w.dataCollection)
 			err := w.connectionP.CloseConnection(cIndex)
 			if err != nil {
-				log.Println(err)
+				// TODO: logging system
+				//log.Println(err)
 			}
 			return
 		}

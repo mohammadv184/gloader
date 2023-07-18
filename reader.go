@@ -2,6 +2,7 @@ package gloader
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -71,7 +72,8 @@ func (r *Reader) Start() error {
 		fmt.Println("closing buffer")
 		err := r.buffer.Close()
 		if err != nil {
-			log.Println(err)
+			// TODO: logging system
+			//log.Println(err)
 		}
 	}()
 
@@ -116,6 +118,19 @@ func (r *Reader) RunWorker(startOffset, endOffset, rowPerBatch uint64) {
 		retryRead:
 			batch, err := rConn.Read(r.ctx, r.dataCollection, i, i+rowPerBatch)
 			if err != nil {
+				select {
+				case <-r.ctx.Done():
+					goto stopWorker
+				default:
+				}
+				if errors.Is(err, driver.ErrConnectionIsClosed) {
+					conn, cIndex, err = r.connectionP.Connect(r.ctx)
+					if err != nil {
+						log.Printf("error on connecting to database err: %s\n", err)
+						goto retryRead
+					}
+					rConn = conn.(driver.ReadableConnection)
+				}
 				log.Printf("error on reading data batch from %d,%d err: %s\n", i, i+rowPerBatch, err)
 				goto retryRead
 
@@ -126,7 +141,8 @@ func (r *Reader) RunWorker(startOffset, endOffset, rowPerBatch uint64) {
 
 			select {
 			case <-r.ctx.Done():
-				log.Printf("context canceled: raeder worker %s:%d,%d stoped\n", r.dataCollection, startOffset, endOffset)
+				// TODO: logging system
+				//log.Printf("context canceled: raeder worker %s:%d,%d stoped\n", r.dataCollection, startOffset, endOffset)
 				goto stopWorker
 			case ch <- batch:
 				continue
@@ -136,7 +152,8 @@ func (r *Reader) RunWorker(startOffset, endOffset, rowPerBatch uint64) {
 	stopWorker:
 		err := r.connectionP.CloseConnection(cIndex)
 		if err != nil {
-			log.Println("failed on closing database connection err:", err)
+			// TODO: logging system
+			//log.Println("failed on closing database connection err:", err)
 		}
 		wg.Done()
 		close(ch)
@@ -147,7 +164,7 @@ func (r *Reader) RunWorker(startOffset, endOffset, rowPerBatch uint64) {
 			select {
 			case batch, ok := <-ch:
 				if !ok {
-					log.Printf("batch readCh closed %s:%d,%d\n", r.dataCollection, startOffset, endOffset)
+					//log.Printf("batch readCh closed %s:%d,%d\n", r.dataCollection, startOffset, endOffset)
 					wg.Done()
 					return
 				}
