@@ -163,6 +163,15 @@ func (d *Set) GetStringValues() []string {
 	return values
 }
 
+func (d *Set) Has(key string) bool {
+	for _, data := range *d {
+		if data.GetKey() == key {
+			return true
+		}
+	}
+	return false
+}
+
 // Clone returns a clone of the data set.
 func (d *Set) Clone() *Set {
 	clone := NewDataSet()
