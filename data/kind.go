@@ -38,6 +38,48 @@ const (
 	KindFloat64
 )
 
+// KindGroup represents the group of kind.
+// The kinds in the same group are compatible.
+type KindGroup uint8
+
+const (
+	KindGroupUnknown KindGroup = iota
+	KindGroupString
+	KindGroupInt
+	KindGroupFloat
+)
+
+var kindGroups = [...]KindGroup{
+	KindUnknown:   KindGroupUnknown,
+	KindString:    KindGroupString,
+	KindInt:       KindGroupInt,
+	KindFloat:     KindGroupFloat,
+	KindBool:      KindGroupUnknown,
+	KindTime:      KindGroupUnknown,
+	KindTimestamp: KindGroupUnknown,
+	KindDuration:  KindGroupUnknown,
+	KindBytes:     KindGroupString,
+	KindArray:     KindGroupUnknown,
+	KindMap:       KindGroupUnknown,
+	KindStruct:    KindGroupUnknown,
+	KindInterface: KindGroupUnknown,
+	KindPointer:   KindGroupUnknown,
+	KindFunc:      KindGroupUnknown,
+	KindChan:      KindGroupUnknown,
+	KindSlice:     KindGroupUnknown,
+	KindUint:      KindGroupInt,
+	KindUint8:     KindGroupInt,
+	KindUint16:    KindGroupInt,
+	KindUint32:    KindGroupInt,
+	KindUint64:    KindGroupInt,
+	KindInt8:      KindGroupInt,
+	KindInt16:     KindGroupInt,
+	KindInt32:     KindGroupInt,
+	KindInt64:     KindGroupInt,
+	KindFloat32:   KindGroupFloat,
+	KindFloat64:   KindGroupFloat,
+}
+
 var kindNames = [...]string{
 	KindUnknown:   "unknown",
 	KindString:    "string",
@@ -145,6 +187,25 @@ func (k Kind) GetReflectKind() reflect.Kind {
 		return v
 	}
 	return reflect.Invalid
+}
+
+func (k Kind) GetKindGroup() KindGroup {
+	if int(k) < len(kindGroups) {
+		return kindGroups[k]
+	}
+	return KindGroupUnknown
+}
+
+func (k Kind) IsCompatibleWith(other Kind) bool {
+	if k == KindUnknown || other == KindUnknown {
+		return false
+	}
+
+	if k == other {
+		return true
+	}
+
+	return k.GetKindGroup() == other.GetKindGroup()
 }
 
 // GetKindFromName returns the kind from the given name.

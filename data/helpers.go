@@ -12,7 +12,7 @@ func IsCompatibleWithType(t1, t2 ValueType) bool {
 func GetNewValueTypeAs(t Type) ValueType {
 	// dereference pointer
 	if reflect.TypeOf(t).Kind() == reflect.Ptr {
-		t = reflect.TypeOf(t).Elem().(Type)
+		return reflect.New(reflect.ValueOf(t).Elem().Type()).Interface().(ValueType)
 	}
 
 	return reflect.New(reflect.TypeOf(t)).Interface().(ValueType)
