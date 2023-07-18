@@ -2,8 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"sync"
 )
 
@@ -33,15 +31,18 @@ type Buffer struct {
 
 // BufferObserver is an interface that can be implemented to observe the buffer.
 type BufferObserver interface {
-	// Size is called when the buffer size changes.
-	Size(s uint64)
-	// Length is called when the buffer length changes.
-	Length(l int)
+	// SizeChanged is called when the buffer size changes.
+	SizeChanged(s uint64)
+	// LengthChanged is called when the buffer length changes.
+	LengthChanged(l uint64)
+
+	Write(n int)
+	Read(n int)
 }
 
 // NewBuffer creates a new buffer with the given maximum size in bytes.
 // If no size is given, the DefaultMaxBufferLength is used.
-// Size: the maximum size of the buffer in bytes. And cannot be 0.
+// SizeChanged: the maximum size of the buffer in bytes. And cannot be 0.
 func NewBuffer(ctx context.Context, size ...uint64) *Buffer {
 	var bSize uint64 = DefaultMaxBufferSize
 	if len(size) > 0 && size[0] > 0 {
@@ -74,7 +75,9 @@ func (b *Buffer) Write(data ...*Set) error {
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	b.data.Add(data...)
-	b.observeChanges()
+
+	b.observeChanges(b.data.GetLength(), b.data.GetSize())
+	b.observe.Write(len(data))
 	return nil
 }
 
@@ -85,6 +88,10 @@ func (b *Buffer) Read() (*Set, error) {
 		data, err := b.popDataSet()
 
 		if data != nil || err != nil {
+			if data != nil {
+				b.observe.Read(1)
+			}
+
 			return data, err
 		}
 	}
@@ -95,7 +102,7 @@ func (b *Buffer) Read() (*Set, error) {
 func (b *Buffer) popDataSet() (*Set, error) {
 	for {
 		if b.IsClosed() && b.IsEmpty() {
-			fmt.Println("buffer is closed")
+			//fmt.Println("buffer is closed")
 			return nil, ErrBufferIsClosed
 		}
 		if b.IsEmpty() {
@@ -106,7 +113,7 @@ func (b *Buffer) popDataSet() (*Set, error) {
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	dSet := b.data.Pop()
-	b.observeChanges()
+	b.observeChanges(b.data.GetLength(), b.data.GetSize())
 	return dSet, nil
 }
 
@@ -115,7 +122,7 @@ func (b *Buffer) Clear() {
 	b.locker.Lock()
 	defer b.locker.Unlock()
 	b.data = NewDataBatch()
-	b.observeChanges()
+	b.observeChanges(b.data.GetLength(), b.data.GetSize())
 }
 
 // GetSize returns the current size of the buffer in bytes.
@@ -126,7 +133,7 @@ func (b *Buffer) GetSize() uint64 {
 }
 
 // GetLength returns the current length of the buffer.
-func (b *Buffer) GetLength() int {
+func (b *Buffer) GetLength() uint64 {
 	b.locker.RLock()
 	defer b.locker.RUnlock()
 	return b.data.GetLength()
@@ -196,7 +203,7 @@ func (b *Buffer) Close() error {
 func (b *Buffer) checkMaxSize() {
 	checkCh := make(chan any)
 	go func() {
-		for b.maxSize < b.GetSize() || b.maxLength < uint64(b.GetLength()) {
+		for b.maxSize < b.GetSize() || b.maxLength < b.GetLength() {
 			if b.IsClosed() {
 				checkCh <- 1
 				return
@@ -210,7 +217,8 @@ func (b *Buffer) checkMaxSize() {
 	case <-b.ctx.Done():
 		err := b.Close()
 		if err != nil {
-			log.Println(err)
+			// TODO: logging system
+			//log.Println(err)
 		}
 		return
 	case <-checkCh:
@@ -224,7 +232,8 @@ func (b *Buffer) checkContext() {
 	case <-b.ctx.Done():
 		err := b.Close()
 		if err != nil {
-			log.Println(err)
+			// TODO: logging system
+			//log.Println(err)
 		}
 	default:
 	}
@@ -235,10 +244,10 @@ func (b *Buffer) checkConditions() {
 	b.checkMaxSize()
 }
 
-func (b *Buffer) observeChanges() {
+func (b *Buffer) observeChanges(l uint64, s uint64) {
 	if b.observe == nil {
 		return
 	}
-	b.observe.Length(b.GetLength())
-	b.observe.Size(b.GetSize())
+	b.observe.LengthChanged(l)
+	b.observe.SizeChanged(s)
 }

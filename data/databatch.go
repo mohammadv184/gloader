@@ -24,7 +24,7 @@ func (b *Batch) Add(set ...*Set) {
 // Get returns the data set at the given index.
 // It returns nil if the index is out of range.
 func (b *Batch) Get(index int) *Set {
-	if index >= b.GetLength() {
+	if index >= int(b.GetLength()) {
 		return nil
 	}
 	return (*b)[index]
@@ -53,19 +53,19 @@ func (b *Batch) GetSize() uint64 {
 }
 
 // GetLength returns the length of the batch.
-func (b *Batch) GetLength() int {
-	return len(*b)
+func (b *Batch) GetLength() uint64 {
+	return uint64(len(*b))
 }
 
 // Remove removes the data set by the given index.
 // It does nothing if the index is out of range.
 func (b *Batch) Remove(index int) {
 	switch {
-	case index < 0 || index >= b.GetLength():
+	case index < 0 || index >= int(b.GetLength()):
 		return
 	case index == 0:
 		*b = (*b)[1:]
-	case index == b.GetLength()-1:
+	case index == int(b.GetLength())-1:
 		*b = (*b)[:index]
 	default:
 		*b = append((*b)[:index], (*b)[index+1:]...)
