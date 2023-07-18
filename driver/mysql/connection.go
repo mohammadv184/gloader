@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -12,7 +13,7 @@ import (
 
 // Connection is a connection to a MySQL database.
 type Connection struct {
-	conn     *sql.DB
+	conn     *sql.Conn
 	isClosed bool
 	config   *Config
 	driver.DefaultFilterBuilder
@@ -43,7 +44,16 @@ func (m *Connection) Ping() error {
 	if m.isClosed {
 		return driver.ErrConnectionIsClosed
 	}
-	return m.conn.Ping()
+
+	err := m.conn.PingContext(context.Background())
+	if err != nil {
+		if errors.Is(err, sql.ErrConnDone) {
+			m.isClosed = true
+			return driver.ErrConnectionIsClosed
+		}
+		return err
+	}
+	return nil
 }
 
 // GetDetails returns the details of the database.
@@ -58,6 +68,10 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 
 	tables, err := m.conn.QueryContext(ctx, "SHOW TABLES")
 	if err != nil {
+		if errors.Is(err, sql.ErrConnDone) {
+			m.isClosed = true
+			return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+		}
 		return driver.DatabaseDetail{}, err
 	}
 	defer tables.Close()
@@ -65,8 +79,11 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 	for tables.Next() {
 		var tableName string
 		err = tables.Scan(&tableName)
-
 		if err != nil {
+			if errors.Is(err, sql.ErrConnDone) {
+				m.isClosed = true
+				return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+			}
 			return driver.DatabaseDetail{}, err
 		}
 
@@ -78,17 +95,25 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 	}
 
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.QueryContext(ctx, "SHOW COLUMNS FROM ?", table.Name)
+		columns, err := m.conn.QueryContext(ctx, fmt.Sprintf("SHOW COLUMNS FROM %s", table.Name))
 		if err != nil {
+			if errors.Is(err, sql.ErrConnDone) {
+				m.isClosed = true
+				return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+			}
 			return driver.DatabaseDetail{}, err
 		}
 
 		for columns.Next() {
 			var columnName, columnType string
-			var columnNullable bool
+			var columnNullable string
 			var null any
 			err = columns.Scan(&columnName, &columnType, &columnNullable, &null, &null, &null)
 			if err != nil {
+				if errors.Is(err, sql.ErrConnDone) {
+					m.isClosed = true
+					return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+				}
 				return driver.DatabaseDetail{}, err
 			}
 
@@ -97,11 +122,15 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 				return driver.DatabaseDetail{}, err
 			}
 
-			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable)
+			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable == "YES")
 		}
 
-		rows, err := m.conn.QueryContext(ctx, "SELECT COUNT(*) FROM ? "+m.BuildFilterSQL(table.Name), table.Name)
+		rows, err := m.conn.QueryContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table.Name, m.BuildFilterSQL(table.Name)))
 		if err != nil {
+			if errors.Is(err, sql.ErrConnDone) {
+				m.isClosed = true
+				return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+			}
 			return driver.DatabaseDetail{}, err
 		}
 
@@ -109,6 +138,10 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 			var count int
 			err = rows.Scan(&count)
 			if err != nil {
+				if errors.Is(err, sql.ErrConnDone) {
+					m.isClosed = true
+					return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
+				}
 				return driver.DatabaseDetail{}, err
 			}
 			databaseInfo.DataCollections[i].DataSetCount = count
@@ -124,7 +157,7 @@ func (m *Connection) Read(ctx context.Context, dataCollection string, startOffse
 	if m.isClosed {
 		return nil, driver.ErrConnectionIsClosed
 	}
-	fmt.Println("Reading from", startOffset, "to", endOffset)
+	//fmt.Println("Reading from", startOffset, "to", endOffset)
 
 	batch := data.NewDataBatch()
 
@@ -140,6 +173,10 @@ func (m *Connection) Read(ctx context.Context, dataCollection string, startOffse
 			fmt.Sprint(endOffset-startOffset),
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrConnDone) {
+			m.isClosed = true
+			return nil, driver.ErrConnectionIsClosed
+		}
 		return nil, err
 	}
 
@@ -156,6 +193,10 @@ func (m *Connection) Read(ctx context.Context, dataCollection string, startOffse
 		}
 		err = rows.Scan(row...)
 		if err != nil {
+			if errors.Is(err, sql.ErrConnDone) {
+				m.isClosed = true
+				return nil, driver.ErrConnectionIsClosed
+			}
 			return nil, err
 		}
 
