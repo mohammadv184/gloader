@@ -2,7 +2,6 @@ package cockroach
 
 import (
 	"context"
-	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mohammadv184/gloader/driver"
@@ -14,7 +13,8 @@ type Cockroach struct{}
 func init() {
 	err := driver.Register(&Cockroach{})
 	if err != nil {
-		log.Println(err)
+		// TODO: logging system
+		//log.Println(err)
 	}
 }
 

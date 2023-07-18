@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -13,52 +15,54 @@ import (
 
 // Connection is a connection to a CockroachDB database.
 type Connection struct {
-	conn     *pgx.Conn
-	isClosed bool
-	dbName   string
-	config   *Config
+	conn         *pgx.Conn
+	isClosed     bool
+	dbName       string
+	tableDetails map[string]driver.DataCollectionDetail
+	config       *Config
+
 	driver.DefaultFilterBuilder
 	driver.DefaultSortBuilder
 }
 
 // Close closes the connection to the database.
-func (m *Connection) Close() error {
-	if m.isClosed {
+func (c *Connection) Close() error {
+	if c.isClosed {
 		return driver.ErrConnectionIsClosed
 	}
 
-	err := m.conn.Close(context.Background())
+	err := c.conn.Close(context.Background())
 	if err != nil {
 		return err
 	}
-	m.isClosed = true
+	c.isClosed = true
 	return err
 }
 
-func (m *Connection) Ping() error {
-	if m.isClosed {
+func (c *Connection) Ping() error {
+	if c.isClosed {
 		return driver.ErrConnectionIsClosed
 	}
-	return m.conn.Ping(context.Background())
+	return c.conn.Ping(context.Background())
 }
 
 // IsClosed returns the status of the connection.
-func (m *Connection) IsClosed() bool {
-	return m.isClosed
+func (c *Connection) IsClosed() bool {
+	return c.isClosed
 }
 
 // GetDetails returns the details of the database.
-func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, error) {
-	if m.isClosed {
+func (c *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, error) {
+	if c.isClosed {
 		return driver.DatabaseDetail{}, driver.ErrConnectionIsClosed
 	}
 
 	databaseInfo := driver.DatabaseDetail{
-		Name:            m.dbName,
+		Name:            c.dbName,
 		DataCollections: make([]driver.DataCollectionDetail, 0),
 	}
 
-	tables, err := m.conn.Query(ctx, "SHOW TABLES")
+	tables, err := c.conn.Query(ctx, "SHOW TABLES")
 	if err != nil {
 		return driver.DatabaseDetail{}, err
 	}
@@ -83,47 +87,19 @@ func (m *Connection) GetDetails(ctx context.Context) (driver.DatabaseDetail, err
 	}
 
 	for i, table := range databaseInfo.DataCollections {
-		columns, err := m.conn.Query(ctx, "SHOW COLUMNS FROM $1", table.Name)
+		dc, err := c.getTableDetails(ctx, table.Name)
 		if err != nil {
 			return driver.DatabaseDetail{}, err
 		}
-
-		// the client will automatically close the rows when all the rows are read
-		for columns.Next() {
-			var columnName, columnType string
-			var columnNullable bool
-			err = columns.Scan(&columnName, &columnType, &columnNullable, nil, nil, nil, nil)
-			if err != nil {
-				return driver.DatabaseDetail{}, err
-			}
-			t, err := GetTypeFromName(columnType)
-			if err != nil {
-				return driver.DatabaseDetail{}, err
-			}
-			databaseInfo.DataCollections[i].DataMap.Set(columnName, t, columnNullable)
-		}
-		if err = columns.Err(); err != nil {
-			return driver.DatabaseDetail{}, err
-		}
-
-		var count int
-
-		c := m.conn.QueryRow(ctx, "SELECT COUNT(*) FROM $1 "+m.BuildFilterSQL(table.Name), table.Name)
-
-		err = c.Scan(&count)
-		if err != nil {
-			return driver.DatabaseDetail{}, err
-		}
-		databaseInfo.DataCollections[i].DataSetCount = count
-		columns.Close()
+		databaseInfo.DataCollections[i] = dc
 	}
 
 	return databaseInfo, nil
 }
 
 // Write writes a batch of data to the database.
-func (m *Connection) Write(ctx context.Context, table string, dataBatch *data.Batch) error {
-	if m.isClosed {
+func (c *Connection) Write(ctx context.Context, table string, dataBatch *data.Batch) error {
+	if c.isClosed {
 		return driver.ErrConnectionIsClosed
 	}
 
@@ -131,74 +107,142 @@ func (m *Connection) Write(ctx context.Context, table string, dataBatch *data.Ba
 		return nil
 	}
 
-	dDetails, err := m.GetDetails(ctx)
-	if err != nil {
-		return fmt.Errorf("cockroach: failed to get database details: %w", err)
-	}
-
-	tDetails, err := dDetails.GetDataCollection(table)
+	tDetails, err := c.getTableDetails(ctx, table)
 	if err != nil {
 		return fmt.Errorf("cockroach: failed to get table details: %w", err)
 	}
 
-	if dataBatch.Get(0).GetLength() != tDetails.DataMap.Len() {
-		return fmt.Errorf("cockroach: dataSet length is not equal to table columns length")
-	}
+	rows := make(map[string][][]any)
+	rowsKeys := make(map[string][]string)
 
-	rows := make([][]any, dataBatch.GetLength())
 	for _, dataSet := range *dataBatch {
-		row := make([]any, dataSet.GetLength())
-		for i, d := range *dataSet {
-			if !tDetails.DataMap.Has(d.GetKey()) {
-				return fmt.Errorf("cockroach: column %s not found", d.GetKey())
-			}
+		row := make([]any, 0)
+		rowKeys := make([]string, 0)
 
-			if tDetails.DataMap.Get(d.GetKey()).GetTypeKind() != d.GetValueType().GetTypeKind() {
+		for i, tKey := range tDetails.DataMap.Keys() {
+			t := tDetails.GetDataMap().GetIndex(i)
+			if !dataSet.Has(tKey) || dataSet.Get(tKey).GetValueType().GetValue() == nil {
+				if tDetails.DataMap.HasDefaultValue(tKey) {
+					continue
+				}
+
+				if tDetails.DataMap.IsNullable(tKey) {
+					row = append(row, nil)
+					rowKeys = append(rowKeys, tKey)
+					continue
+				}
+
+				return fmt.Errorf("cockroach: column %s is not nullable or does not have a default value but is not set", tKey)
+			}
+			d := dataSet.Get(tKey)
+
+			if !t.GetTypeKind().IsCompatibleWith(d.GetValueType().GetTypeKind()) {
 				return fmt.Errorf(
 					"cockroach: column %s data type kind mismatch ( %s != %s )",
-					d.GetKey(),
-					tDetails.DataMap.Get(d.GetKey()).GetTypeKind().String(),
+					tKey,
+					t.GetTypeKind().String(),
 					d.GetValueType().GetTypeKind().String(),
 				)
 			}
 
-			if !tDetails.DataMap.IsNullable(d.GetKey()) && d.GetValueType().GetValue() == nil {
-				return fmt.Errorf("cockroach: column %s is not nullable", d.GetKey())
-			}
-
-			dValueType, err := d.GetValueType().To(tDetails.DataMap.Get(d.GetKey()))
+			dValueType, err := d.GetValueType().To(t)
 			if err != nil {
 				return fmt.Errorf("cockroach: failed to convert data type: %w", err)
 			}
-			row[i] = dValueType.GetValue()
+			row = append(row, dValueType.GetValue())
+			rowKeys = append(rowKeys, tKey)
 		}
-		rows = append(rows, row)
+		rKeysCopy := make([]string, len(rowKeys))
+		copy(rKeysCopy, rowKeys)
+		sort.Slice(rKeysCopy, func(i, j int) bool { return rKeysCopy[i] < rKeysCopy[j] })
+		k := strings.Join(rKeysCopy, ",")
+		rows[k] = append(rows[k], row)
+		if _, ok := rowsKeys[k]; !ok {
+			rowsKeys[k] = rowKeys
+		}
 	}
 
-	tx, err := m.conn.Begin(ctx)
+	tx, err := c.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = tx.CopyFrom(
-		ctx,
-		pgx.Identifier{table},
-		dataBatch.Get(0).GetKeys(),
-		pgx.CopyFromRows(rows),
-	)
+	// insert rows with default values
+	for k, rows := range rows {
+		_, err = tx.CopyFrom(
+			ctx,
+			pgx.Identifier{table},
+			rowsKeys[k],
+			pgx.CopyFromRows(rows),
+		)
 
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" { // 23505 is the unique_violation error code
-				fmt.Println("Unique violation detected: ", pgErr.Detail, table)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				if pgErr.Code == "23505" { // 23505 is the unique_violation error code
+					fmt.Println("Unique violation detected: ", pgErr.Detail, table)
+				}
+				fmt.Println("Error executing statement: ", pgErr.Code, pgErr.Message, pgErr.Detail, table)
 			}
-			fmt.Println("Error executing statement: ", pgErr.Code, pgErr.Message, pgErr.Detail, table)
+			fmt.Println("Error executing statement")
+			return err
 		}
-		fmt.Println("Error executing statement")
-		return err
+
 	}
 
 	return tx.Commit(ctx)
+}
+
+func (c *Connection) getTableDetails(ctx context.Context, table string) (driver.DataCollectionDetail, error) {
+	if c.tableDetails == nil {
+		c.tableDetails = make(map[string]driver.DataCollectionDetail)
+	}
+
+	if t, isExists := c.tableDetails[table]; isExists {
+		return t, nil
+	}
+
+	dc := driver.DataCollectionDetail{
+		Name:    table,
+		DataMap: new(data.Map),
+	}
+
+	columns, err := c.conn.Query(ctx, fmt.Sprintf("SHOW COLUMNS FROM %s", table))
+	if err != nil {
+		return driver.DataCollectionDetail{}, err
+	}
+
+	// the client will automatically close the rows when all the rows are read
+	for columns.Next() {
+		var columnName, columnType string
+		var columnDefault []byte
+		var columnNullable bool
+		err = columns.Scan(&columnName, &columnType, &columnNullable, &columnDefault, nil, nil, nil)
+		if err != nil {
+			return driver.DataCollectionDetail{}, err
+		}
+		t, err := GetTypeFromName(columnType)
+		if err != nil {
+			return driver.DataCollectionDetail{}, err
+		}
+		dc.DataMap.Set(columnName, t, columnNullable, len(columnDefault) != 0)
+	}
+	if err = columns.Err(); err != nil {
+		return driver.DataCollectionDetail{}, err
+	}
+
+	var count int
+
+	res := c.conn.QueryRow(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table, c.BuildFilterSQL(table)))
+
+	err = res.Scan(&count)
+	if err != nil {
+		return driver.DataCollectionDetail{}, err
+	}
+	dc.DataSetCount = count
+
+	c.tableDetails[table] = dc
+
+	return dc, nil
 }
