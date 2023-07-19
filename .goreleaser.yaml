@@ -130,7 +130,7 @@ snapcrafts:
           plugs: [ "network"]
 
 brews:
-  - tap:
+  - repository:
       owner: mohammadv184
       name: homebrew-tap
     homepage: https://github.com/mohammadv184/gloader

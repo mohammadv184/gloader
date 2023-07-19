@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -163,18 +162,20 @@ var runCmd = &cobra.Command{
 
 		gStats := gloader.Stats()
 
-		w, _, err := term.GetSize(int(os.Stdout.Fd()))
-		if err != nil {
-			log.Fatal(err)
+		w := 80
+		if term.IsTerminal(int(os.Stdout.Fd())) {
+			width, _, err := term.GetSize(int(os.Stdout.Fd()))
+			if err != nil {
+				log.Println(err)
+			} else {
+				w = width
+			}
 		}
-
-		stringWriter := &bytes.Buffer{}
 
 		pbars := mpb.New(
 			mpb.WithWidth(w),
 			mpb.WithContext(ctx),
 			mpb.WithWaitGroup(wg),
-			mpb.WithOutput(stringWriter),
 		)
 
 		for i, dc := range dataCollections {
@@ -214,7 +215,6 @@ var runCmd = &cobra.Command{
 						return
 					case <-mChangeNotifier:
 						b.IncrBy(int(m.Value(dc.Name)-b.Current()), time.Since(lastReportT))
-						fmt.Println(stringWriter.String())
 					}
 				}
 			}(b, dc)
