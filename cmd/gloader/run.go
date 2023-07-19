@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -167,10 +168,13 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		stringWriter := &bytes.Buffer{}
+
 		pbars := mpb.New(
 			mpb.WithWidth(w),
 			mpb.WithContext(ctx),
 			mpb.WithWaitGroup(wg),
+			mpb.WithOutput(stringWriter),
 		)
 
 		for i, dc := range dataCollections {
@@ -210,6 +214,7 @@ var runCmd = &cobra.Command{
 						return
 					case <-mChangeNotifier:
 						b.IncrBy(int(m.Value(dc.Name)-b.Current()), time.Since(lastReportT))
+						fmt.Println(stringWriter.String())
 					}
 				}
 			}(b, dc)
