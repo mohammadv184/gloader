@@ -129,8 +129,8 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		if len(flagStartOffset) > 0 {
-			for dc, offset := range flagStartOffset {
+		if len(flagEndOffset) > 0 {
+			for dc, offset := range flagEndOffset {
 				gloader.SetEndOffset(dc, uint64(offset))
 			}
 		}
