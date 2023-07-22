@@ -221,5 +221,12 @@ func (m *Connection) Read(ctx context.Context, dataCollection string, startOffse
 		}
 		batch.Add(rowData)
 	}
+	if rows.Err() != nil {
+		if errors.Is(rows.Err(), sql.ErrConnDone) {
+			m.isClosed = true
+			return nil, driver.ErrConnectionIsClosed
+		}
+		return nil, rows.Err()
+	}
 	return batch, nil
 }
