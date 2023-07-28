@@ -38,11 +38,13 @@ var (
 )
 
 var runCmd = &cobra.Command{
-	Use:   "run <source> <destination> [options]",
-	Short: "run a migration",
-	Long: `Migrate data from any source to any destination in a single command.
-           e.g. gloader run mysql://root:root@localhost:3306/tests cockroach://root:root@localhost:5432/tests --filter version<3`,
-	Args: cobra.ExactArgs(2),
+	Use:   "run <source-dsn> <destination-dsn> [options]",
+	Short: "Run a data migration",
+	Long: `GLoader is a CLI tool for data migration between different databases. 
+              It allows you to migrate your data from any source database to any destination database in a single command.`,
+	Example:    "gloader run mysql://root:root@localhost:3306/tests cockroach://root:root@localhost:5432/tests --filter version<3",
+	SuggestFor: []string{"migrate", "start"},
+	Args:       cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		gloader := g.NewGLoader()
 		source := args[0]
