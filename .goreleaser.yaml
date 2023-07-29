@@ -139,9 +139,6 @@ nfpms:
           echo "Adding autocompletion for fish"
           gloader completion fish > ~/.config/fish/completions/gloader.fish
         fi
-        
-        
-
 snapcrafts:
   - name: gloader
     publish: true
@@ -185,13 +182,13 @@ brews:
           echo "Zsh detected"
           echo "Adding autocompletion for zsh"
           gloader completion zsh > $(brew --prefix)/share/zsh/site-functions/_gloader      
-      fi
+        fi
         
         if [ -n "$FISH_VERSION" ]; then
           echo "Fish detected"
           echo "Adding autocompletion for fish"
           gloader completion fish > ~/.config/fish/completions/gloader.fish      
-      fi
+        fi
 
 publishers:
   - name: fury
