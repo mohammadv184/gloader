@@ -102,7 +102,7 @@ func (b *Buffer) Read() (*Set, error) {
 func (b *Buffer) popDataSet() (*Set, error) {
 	for {
 		if b.IsClosed() && b.IsEmpty() {
-			//fmt.Println("buffer is closed")
+			// fmt.Println("buffer is closed")
 			return nil, ErrBufferIsClosed
 		}
 		if b.IsEmpty() {
@@ -218,7 +218,7 @@ func (b *Buffer) checkMaxSize() {
 		err := b.Close()
 		if err != nil {
 			// TODO: logging system
-			//log.Println(err)
+			// log.Println(err)
 		}
 		return
 	case <-checkCh:
@@ -233,7 +233,7 @@ func (b *Buffer) checkContext() {
 		err := b.Close()
 		if err != nil {
 			// TODO: logging system
-			//log.Println(err)
+			// log.Println(err)
 		}
 	default:
 	}

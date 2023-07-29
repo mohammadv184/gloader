@@ -10,8 +10,8 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "gloader command [args] [flags]",
 	Short: "Migrate data from any source to any destination",
-	Long: `Migrate data from any source to any destination in a single command.
-           e.g. gloader run mysql://root:root@localhost:3306/tests cockroach://root:root@localhost:5432/tests --filter version<3`,
+	Long: `GLoader is a CLI tool for data migration between different databases. 
+              It allows you to migrate your data from any source database to any destination database in a single command.`,
 }
 
 func main() {

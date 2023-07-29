@@ -14,7 +14,7 @@ func init() {
 	err := driver.Register(&Cockroach{})
 	if err != nil {
 		// TODO: logging system
-		//log.Println(err)
+		// log.Println(err)
 	}
 }
 

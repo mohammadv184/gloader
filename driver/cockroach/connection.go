@@ -182,6 +182,18 @@ func (c *Connection) Write(ctx context.Context, table string, dataBatch *data.Ba
 			if errors.As(err, &pgErr) {
 				if pgErr.Code == "23505" { // 23505 is the unique_violation error code
 					fmt.Println("Unique violation detected: ", pgErr.Detail, table)
+					// TODO: handle unique violation
+					//dupRow := regexp.MustCompile(`\((.*)\)=\((.*)\)`).FindStringSubmatch(pgErr.Detail)
+					//if len(dupRow) != 3 {
+					//	fmt.Println("Error parsing duplicate row")
+					//	return err
+					//}
+					//
+					//for i, set := range *dataBatch {
+					//	if set.Has(dupRow[1]) && set.Get(dupRow[1]).GetValueType().GetValue() == dupRow[2] {
+					//
+					//	}
+					//}
 				}
 				fmt.Println("Error executing statement: ", pgErr.Code, pgErr.Message, pgErr.Detail, table)
 			}

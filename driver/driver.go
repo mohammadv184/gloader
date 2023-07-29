@@ -41,6 +41,7 @@ type Connection interface {
 type WritableConnection interface {
 	Connection // Embeds Connection
 	// Write writes a batch of data to the database.
+	// If the data set is duplicated or unique constraint is violated, ErrDataSetDuplicate should be returned.
 	Write(ctx context.Context, dataCollection string, dataBatch *data.Batch) error
 }
 
