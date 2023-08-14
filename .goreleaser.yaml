@@ -166,7 +166,7 @@ brews:
         ohai "Installing bash completion..."
         bash_completion.install "completions/bash/gloader" => "gloader"
         ohai "Installing zsh completion..."
-        zsh_completion.install "completions/zsh/gloader => _gloader"
+        zsh_completion.install "completions/zsh/gloader" => "_gloader"
         ohai "Installing fish completion..."
         fish_completion.install "completions/fish/gloader"
       
