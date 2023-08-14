@@ -2,6 +2,7 @@ project_name: gloader
 before:
   hooks:
     - go mod tidy
+    - ./scripts/completions.sh
 builds:
   - env:
       - CGO_ENABLED=0
@@ -115,8 +116,19 @@ nfpms:
       - deb
       - rpm
     bindir: /usr/bin
-    scripts:
-      postinstall: ./scripts/pkgs-postinstall.sh
+    contents:
+      - src: ./completions/bash/gloader
+        dst: /usr/share/bash-completion/completions/gloader
+        file_info:
+          mode: 0644
+      - src: ./completions/fish/gloader
+        dst: /usr/share/fish/vendor_completions.d/gloader.fish
+        file_info:
+          mode: 0644
+      - src: ./completions/zsh/gloader
+        dst: /usr/share/zsh/vendor-completions/_gloader
+        file_info:
+          mode: 0644
 snapcrafts:
   - name: gloader
     publish: true
@@ -146,27 +158,14 @@ brews:
       system "#{bin}/gloader", "version"
     install: |
         bin.install "gloader"
-    post_install: |
-        # Adding autocompletion
-        # Automatically detect and add autocompletion for bash, zsh, fish and powershell
-        
-        if [ -n "$BASH_VERSION" ]; then
-          echo "Bash detected"
-          echo "Adding autocompletion for bash"
-          gloader completion bash > $(brew --prefix)/etc/bash_completion.d/gloader
-        fi
-        
-        if [ -n "$ZSH_VERSION" ]; then
-          echo "Zsh detected"
-          echo "Adding autocompletion for zsh"
-          gloader completion zsh > $(brew --prefix)/share/zsh/site-functions/_gloader      
-        fi
-        
-        if [ -n "$FISH_VERSION" ]; then
-          echo "Fish detected"
-          echo "Adding autocompletion for fish"
-          gloader completion fish > ~/.config/fish/completions/gloader.fish      
-        fi
+    extra_install: |
+        ohai "Installing bash completion..."
+        bash_completion.install "completion/bash/gloader" => "gloader"
+        ohai "Installing zsh completion..."
+        zsh_completion.install "completion/zsh/gloader => _gloader"
+        ohai "Installing fish completion..."
+        fish_completion.install "completion/fish/gloader"
+      
 
 publishers:
   - name: fury
