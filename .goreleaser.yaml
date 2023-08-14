@@ -38,7 +38,7 @@ archives:
     wrap_in_directory: true
     files:
       - README.md
-      - LICENSE.md
+      - LICENSE
       - completions/*
       # use zip for windows archives
     format_overrides:
