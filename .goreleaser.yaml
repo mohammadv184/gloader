@@ -36,7 +36,11 @@ archives:
   - format: tar.gz
     name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     wrap_in_directory: true
-    # use zip for windows archives
+    files:
+      - README.md
+      - LICENSE.md
+      - completions/*
+      # use zip for windows archives
     format_overrides:
     - goos: windows
       format: zip
@@ -160,11 +164,11 @@ brews:
         bin.install "gloader"
     extra_install: |
         ohai "Installing bash completion..."
-        bash_completion.install "completion/bash/gloader" => "gloader"
+        bash_completion.install "completions/bash/gloader" => "gloader"
         ohai "Installing zsh completion..."
-        zsh_completion.install "completion/zsh/gloader => _gloader"
+        zsh_completion.install "completions/zsh/gloader => _gloader"
         ohai "Installing fish completion..."
-        fish_completion.install "completion/fish/gloader"
+        fish_completion.install "completions/fish/gloader"
       
 
 publishers:
