@@ -15,7 +15,7 @@
 
 GLoader is a powerful and flexible CLI tool for data migration between different databases. 
 It provides a seamless way to migrate your data from any source database to any destination database,
-Whether you are upgrading your database or moving data between different systems,
+Whether you are upgrading your database or moving data between different systems;
 GLoader makes the process efficient and reliable.
 
 
@@ -47,6 +47,8 @@ GLoader makes the process efficient and reliable.
 | Kafka         |        :x:         |        :x:         |
 | RabbitMQ      |        :x:         |        :x:         |
 | DynamoDB      |        :x:         |        :x:         |
+
+
 **Note**: The database that is marked with :x: will be supported soon. 
 However, if you have time and want to contribute, you can help us to support them faster by contributing to the project.
 
@@ -118,21 +120,21 @@ flags:
 
 ```
 #### Arguments
-- **source-dsn**: The source DSN (Data Source Name) that is used to connect to the source database.
-- **destination-dsn**: The destination DSN (Data Source Name) that is used to connect to the destination database.
+- **source-dsn**: The Data Source Name (DSN) used to connect to the source database.
+- **destination-dsn**: The DSN used to connect to the destination database.
 #### Flags
-- **--start-offset**: The start offset for each table. The start offset is the first row that is migrated from the source to the destination. The start offset is used to limit the number of rows that are migrated from the source to the destination.
-- **--end-offset**: The end offset for each table. The end offset is the last row that is migrated from the source to the destination. The end offset is used to limit the number of rows that are migrated from the source to the destination.
-- **--exclude**: The tables that are excluded from the migration process.
-- **--table**: The tables that are included in the migration process. 
-- **--filter**: The filter is used to filter the data that is migrated from the source to the destination. The filter is a key, operator, value pair that is used to filter the data. supported operators are: `=`, `!=`, `>`, `>=`, `<`, `<=`.
-- **--filter-all**: The filter-all is used to filter the data that is migrated from the source to the destination for all data collections. The filter-all is a key, operator, value pair that is used to filter the data. supported operators are: `=`, `!=`, `>`, `>=`, `<`, `<=`.
-- **--sort**: The sort is used to sort the data ascending that is migrated from the source to the destination. The sort is a list of field names that is used to sort the data. 
-- **--sort-all**: The sort-all is used to sort the data ascending that is migrated from the source to the destination for all data collections. The sort-all is a list of field names that is used to sort the data.
-- **--sort-reverse**: The sort-reverse is used to sort the data descending that is migrated from the source to the destination. The sort-reverse is a list of field names that is used to sort the data.
-- **--sort-reverse-all**: The sort-reverse-all is used to sort the data descending that is migrated from the source to the destination for all data collections. The sort-reverse-all is a list of field names that is used to sort the data.
-- **--rows-per-batch**: The number of rows per batch. The rows-per-batch is used to limit the number of rows that are migrated from the source to the destination in each batch.
-- **--workers**: The number of workers. The workers are used to migrate the data from the source to the destination in parallel.
+- **--start-offset**: The initial row offset for each table. This sets the starting point for migrating rows from the source to the destination.
+- **--end-offset**: The final row offset for each table, limiting the number of rows migrated.
+- **--exclude**: Exclude specific tables from the migration process.
+- **--table**: Selectively migrate specific tables.
+- **--filter**: Apply data filters to rows being migrated. Use operators such as `=`, `!=`, `>`, `>=`, `<`, and `<=`.
+- **--filter-all**: Apply a universal data filter for all tables.
+- **--sort**: Sort data in ascending order before migration. 
+- **--sort-all**: Apply ascending sorting for all tables.
+- **--sort-reverse**: Sort data in descending order before migration.
+- **--sort-reverse-all**: Apply descending sorting for all tables.
+- **--rows-per-batch**: Set the number of rows migrated per batch.
+- **--workers**: Specify the number of parallel migration workers.
 ### Examples
 #### Migrate all tables from the source to the destination
 ```bash
