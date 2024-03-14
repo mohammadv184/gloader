@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/fatih/color v1.16.0
 	github.com/go-sql-driver/mysql v1.7.0
-	github.com/jackc/pgx/v5 v5.4.1
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/spf13/cobra v1.7.0
 	github.com/vbauerster/mpb v3.4.0+incompatible
 	golang.org/x/term v0.15.0
